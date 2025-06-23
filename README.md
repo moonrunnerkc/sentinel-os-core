@@ -46,7 +46,7 @@ Sentinel OS is a modular, offline-first AI reasoning system built to operate aut
 
 ### 📊 System Diagram
 
-![Sentinel OS Architecture](images/sentinel-os-core-architecture.png)
+![Sentinel OS Architecture](docs/sentinel-os-core-architecture.png_)
 
 ---
 
