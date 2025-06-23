@@ -6,7 +6,9 @@
 ![Stars](https://img.shields.io/github/stars/moonrunnerkc/sentinel-os-core?style=social)
 ![Forks](https://img.shields.io/github/forks/moonrunnerkc/sentinel-os-core?style=social)
 
-Sentinel OS is an offline-first cognitive operating core for synthetic intelligence systems. It provides a modular foundation for autonomous reasoning, persistent memory, local introspection, and adaptive goal evaluation. The system is designed to run in constrained environments without internet access, while supporting high-level decision-making, memory replay, and task mutation.
+Sentinel OS is a **modular, offline-first cognitive operating core** for synthetic intelligence systems. Built to function without cloud dependence, it enables secure autonomous reasoning, persistent memory, and introspective goal evolution in any environment — even adversarial or air-gapped.
+
+🔗 **Live Preview**: [https://sentinel-os.netlify.app](https://sentinel-os.netlify.app)
 
 ---
 
@@ -42,15 +44,28 @@ Sentinel OS is a modular, offline-first AI reasoning system built to operate aut
 - **Graph Engine** – Visual introspection of beliefs and memory clusters
 - **Output Layer** – Executes commands or exports reasoning results
 
-### Pitch Deck / Architecture Diagram
-[📄 Pitch Deck (PDF)](docs/sentinel-os-pitch-deck.pdf)  
-🧠 [Architecture Diagram](docs/sentinel-os-core-architecture.png)
+### 📊 System Diagram
+
+![Sentinel OS Architecture](images/sentinel-os-core-architecture.png)
 
 ---
 
 ## Why It Matters
 
-Current AI systems rely heavily on external APIs, cloud dependencies, or continuous fine-tuning. Sentinel OS is designed to operate in closed-loop, disconnected, or adversarial environments. Its core logic allows for persistent reasoning, contradiction self-diagnosis, and modular identity evolution — even offline.
+Most AI systems today are **fragile, cloud-dependent, and unaware of their contradictions**. Sentinel OS flips that paradigm.
+
+It is built to:
+- Operate fully offline, in closed-loop or hostile environments.
+- Diagnose its own logical faults through contradiction tracing.
+- Mutate memory and goals without external prompts.
+- Support secure, autonomous agents in defense, research, or disaster response.
+
+---
+
+## Pitch + Docs
+
+📄 [Download Full Pitch Deck (PDF)](docs/sentinel-os-pitch-deck.pdf)  
+🌐 [Visit the Official Landing Page](https://sentinel-os.netlify.app)
 
 ---
 
@@ -83,4 +98,5 @@ No derivative works, redistribution, or commercial usage is permitted without ex
 Aftermath Technologies  
 📧 bradkinnard@proton.me  
 🌐 https://aftermathtech.com
+
 
