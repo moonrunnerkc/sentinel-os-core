@@ -42,7 +42,9 @@ Sentinel OS is a modular, offline-first AI reasoning system built to operate aut
 - **Graph Engine** – Visual introspection of beliefs and memory clusters
 - **Output Layer** – Executes commands or exports reasoning results
 
-### 📌 [View Full Architecture Diagram →](docs/sentinel-os-core-architecture.png)
+### Pitch Deck / Architecture Diagram
+[📄 Pitch Deck (PDF)](docs/sentinel-os-pitch-deck.pdf)  
+🧠 [Architecture Diagram](docs/sentinel-os-core-architecture.png)
 
 ---
 
