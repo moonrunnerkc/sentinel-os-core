@@ -1,4 +1,11 @@
-# Sentinel OS Core
+# Sentinel OS – Core Architecture
+
+![License](https://img.shields.io/github/license/moonrunnerkc/sentinel-os-core)
+![Last Commit](https://img.shields.io/github/last-commit/moonrunnerkc/sentinel-os-core)
+![Repo Size](https://img.shields.io/github/repo-size/moonrunnerkc/sentinel-os-core)
+![Stars](https://img.shields.io/github/stars/moonrunnerkc/sentinel-os-core?style=social)
+![Forks](https://img.shields.io/github/forks/moonrunnerkc/sentinel-os-core?style=social)
+
 
 Sentinel OS is an offline-first cognitive operating core for synthetic intelligence systems. It provides a modular foundation for autonomous reasoning, persistent memory, local introspection, and adaptive goal evaluation. The system is designed to run in constrained environments without internet access, while supporting high-level decision-making, memory replay, and task mutation.
 
@@ -15,6 +22,31 @@ This repository is under active development. All source code, models, and archit
 - **Memory Layer (Persistent)**: Structured episodic memory system with replay, mutation, and filtering.
 - **Graph Introspection Module**: Visualizes internal logic nets, contradictions, and goal evolution over time.
 - **Secure Sandbox Layer**: Prevents unauthorized memory overwrites and locks critical internal operations.
+- 
+## Architecture
+Sentinel OS is a modular, offline-first AI reasoning system built to operate autonomously, securely, and transparently. It includes:
+
+Input Layer: Accepts commands or sensor data (via CLI/API)
+
+Memory Layer: Persistent + episodic storage with replay/mutation
+
+Belief Ecology Engine: Maintains internal truth, detects contradictions
+
+Contradiction Tracer: Identifies logical conflicts for self-debugging
+
+Goal Collapse Engine: Dynamically prioritizes or drops goals
+
+Security Layer: Prevents logic corruption or unsafe rewrites
+
+Local LLM Interface: Optional lightweight GPT-style model (runs offline)
+
+Graph Engine: Visual introspection of beliefs and memory clusters
+
+Output Layer: Executes commands or exports reasoning results
+
+## View Full Architecture Diagram 
+docs/sentinel-os-core-architecture.png
+
 
 ## Why It Matters
 
