@@ -1,51 +1,60 @@
 # Sentinel OS Core
-> Autonomous. Secure. Offline-Capable.
 
-This is the core module of **Sentinel OS**, a next-generation operating core built for:
-
-- 🧠 Memory-persistent AI agents  
-- 🔒 Air-gapped, zero-trust environments  
-- 🛰️ Defense, intelligence, and critical infrastructure resilience  
-- ⚙️ Offline-first cognitive autonomy
+**Sentinel OS Core** is a modular offline-first cognitive operating system for autonomous software agents. Built to operate in denied environments, it provides persistent memory, self-evolving reasoning, agent orchestration, and programmatic introspection. Sentinel is designed for security-critical, isolated environments such as forward operating field deployments, embedded systems, and autonomous research infrastructure.
 
 ---
 
-## 👁️‍🗨️ Mission
+## 🔧 System Capabilities
 
-Sentinel OS Core enables resilient autonomous systems by giving agents:
-
-- Modular offline intelligence
-- Native introspection + belief ecology memory
-- Secure, deterministic behavior in hostile or disconnected environments
-
----
-
-## 🔧 Current Capabilities
-
-- Core agent memory and mutation framework
-- Modular belief ecology + contradiction tracing
-- Local goal/collapse engine (no cloud dependency)
-- JSON-based introspection + state logs
+- Modular agent loading and memory injection
+- Belief-based reasoning engine with contradiction resolution
+- Offline operation with zero cloud dependency
+- Local symbolic + neural cognition hybrid
+- Plugin-based execution pipeline for agent workflows
+- JSON-encoded memory persistence and recall
+- Persistent cognitive state per task or agent
+- Live introspection graphs of reasoning chains
 
 ---
 
-## 📍 Roadmap
+## 🧠 Use Case Alignment
 
-| Milestone | Status |
-|----------|--------|
-| Cognitive memory engine | ✅ Complete |
-| Goal mutator + contradiction tracing | ✅ Done |
-| Logic graph visualizer (introspection UI) | 🔄 In progress |
-| Secure CLI interface (air-gapped use) | 🔜 Coming soon |
-| SentinelOS full deployment bundle | 🔜 Milestone Q3 |
-
----
-
-## 📄 License
-
-Licensed under the [Apache 2.0 License](LICENSE).
+| Sector         | Application                                |
+|----------------|---------------------------------------------|
+| National Security | Disconnected tactical agents, field OS prototypes |
+| Aerospace      | Autonomous systems with adaptive cognition |
+| Research Ops   | Long-term unattended AI agents             |
+| Cyber Defense  | Offline-first security tools, memory-restricted sandboxing |
 
 ---
 
-## 👨‍💻 Built by  
-Brad Kinnard · [github.com/moonrunnerkc](https://github.com/moonrunnerkc)
+## 📁 Architecture Overview
+
+/core
+boot_controller.py
+modular_agent_loader.py
+system_memory_manager.py
+
+/docs
+technical_summary.md
+iqt_pitch_summary.md
+capabilities_matrix.md
+
+---
+
+## 📄 Licensing
+
+Sentinel OS Core is released under a dual license:
+- **Permissive internal R&D use**
+- **Commercial/Military use by written license only**
+
+Contact `bradkinnard@proton.me` for authorization.
+
+---
+
+## 📬 Contact
+
+Bradley Ryan Kinnard  
+Founder, Aftermath Technologies  
+GitHub: [moonrunnerkc](https://github.com/moonrunnerkc)  
+Email: bradkinnard@proton.me
