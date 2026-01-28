@@ -180,39 +180,38 @@ pip install liboqs-python
 
 ## Quick Start
 
-```python
-from verification.state_machine import TransitionEngine, BeliefState
-from privacy.budget import PrivacyAccountant
-from privacy.mechanisms import laplace_mechanism
-import time
+```bash
+# run the demo
+python demo.py
+```
 
-# create transition engine with formal tracking
-engine = TransitionEngine()
+Output:
+```
+============================================================
+SENTINEL OS CORE - DEMO
+============================================================
 
-# create privacy accountant with budget
-accountant = PrivacyAccountant(total_epsilon=1.0, total_delta=1e-5)
+[1/5] Verification Layer...
+      Trace integrity: True
 
-# insert beliefs with full transition tracking
-belief = BeliefState(
-    belief_id="b1",
-    content_hash="abc123",
-    confidence=0.8,
-    timestamp=time.time(),
-)
-transition = engine.insert_belief(belief)
+[2/5] Privacy Layer...
+      Budget remaining: 0.90 epsilon
+      Noisy value: 0.4823 (original: 0.5)
 
-# update with privacy-preserving noise
-raw_update = 0.1
-accountant.spend(0.1, mechanism="laplace", operation="belief_update")
-noisy_update, _ = laplace_mechanism(raw_update, sensitivity=1.0, epsilon=0.1)
-engine.update_belief("b1", belief.confidence + noisy_update, time.time())
+[3/5] ZK Proofs...
+      Proof valid: True
 
-# verify trace integrity
-valid, msg = engine.verify_trace_integrity()
-print(f"Trace valid: {valid} - {msg}")
+[4/5] Merkle Tree...
+      Root: 8a6d2be625687bba0ba4d1858de2f957...
+      Leaves: 4
 
-# check privacy budget
-print(f"Remaining epsilon: {accountant.budget.remaining_epsilon():.4f}")
+[5/5] Signed Audit Chain...
+      Chain valid: True
+      Entries: 3
+
+============================================================
+ALL SYSTEMS OPERATIONAL
+============================================================
 ```
 
 ---
