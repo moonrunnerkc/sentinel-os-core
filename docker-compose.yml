@@ -1,0 +1,22 @@
+version: '3.8'
+
+# Author: Bradley R. Kinnard
+# sentinel-os-core docker compose
+
+services:
+  sentinel-os:
+    build: .
+    container_name: sentinel-os-core
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+    network_mode: none  # no network access - offline first
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G

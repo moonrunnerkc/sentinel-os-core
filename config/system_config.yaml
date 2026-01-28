@@ -1,0 +1,16 @@
+llm:
+  backend: llama-cpp
+  model_path: data/models/llama-2-7b.Q4_K_M.gguf
+  temperature: 0.0
+  seed: 42
+  gpu_layers: 0
+  min_vram_gb: 4.0
+performance:
+  max_beliefs: 10000
+  max_episodes: 10000
+  cache_size: 1000
+features:
+  use_world_models: false
+  use_counterfactual_sim: false
+  neuromorphic_mode: false
+  enable_meta_evolution: false

@@ -1,0 +1,9 @@
+{
+  "use_firejail": false,
+  "allowed_paths": ["data/"],
+  "hmac_key_seed": 42,
+  "seccomp_profile": "execve,ptrace",
+  "pq_crypto": false,
+  "use_homomorphic_enc": false,
+  "enable_federated_sync": false
+}
