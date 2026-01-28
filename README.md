@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-143%20passed-brightgreen.svg)](#verification-evidence)
 
 Modular, offline-first cognitive operating system for synthetic intelligence. Designed for autonomous reasoning, persistent memory, and goal evolution in air-gapped or adversarial environments.
 
@@ -12,6 +13,7 @@ Modular, offline-first cognitive operating system for synthetic intelligence. De
 ## Table of Contents
 
 - [Why This Exists](#why-this-exists)
+- [Verification Evidence](#verification-evidence)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Installation](#installation)
@@ -40,6 +42,35 @@ Most AI systems assume cloud connectivity and treat security as an afterthought.
 - Privacy budgets must be formally tracked
 
 This is not a chatbot framework. It is a cognitive substrate for autonomous systems.
+
+---
+
+## Verification Evidence
+
+### Test Suite: 143 Passed, 10 Skipped
+
+![Test Results](docs/screenshots/test-results.png)
+
+*Full test suite execution showing 143 tests passed across verification, privacy, crypto, sandbox, and security modules. 10 tests skipped (firejail integration requires external binary).*
+
+### Demo: All Systems Operational
+
+![Demo Output](docs/screenshots/demo-output.png)
+
+*Live execution of `python demo.py` demonstrating all 5 core features: verification layer, privacy budget tracking, ZK proof generation/verification, Merkle tree construction, and signed audit chains.*
+
+### Benchmark Results
+
+![Benchmarks Part 1](docs/screenshots/benchmarks-1.png)
+![Benchmarks Part 2](docs/screenshots/benchmarks-2.png)
+
+*Performance benchmarks showing:*
+- **HMAC signing**: 559,932 ops/sec (0.0018ms mean)
+- **DP noise**: 567,791 ops/sec (0.0018ms mean)
+- **ZK proof generation**: 15,043 ops/sec (0.0665ms mean)
+- **Contradiction detection**: 10,291 ops/sec (0.0972ms mean)
+- **Merkle tree build**: 7,535 ops/sec (0.1327ms mean)
+- **Belief insert**: 4,529 ops/sec (0.2208ms mean)
 
 ---
 
