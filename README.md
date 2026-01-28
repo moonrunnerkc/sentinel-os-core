@@ -49,9 +49,18 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 
 ### Test Suite: 143 Passed, 10 Skipped
 
-![Test Results](docs/screenshots/test-results.png)
+🧪 **[View Full Test Screenshot](docs/screenshots/test-results.png)**
 
-*Full test suite execution showing 143 tests passed across verification, privacy, crypto, sandbox, and security modules. 10 tests skipped (firejail integration requires external binary).*
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| `tests/test_verification.py` | 24 passed | State machine, invariants, property tests, termination |
+| `tests/test_privacy.py` | 23 passed | Budget accounting, Laplace/Gaussian mechanisms, clipping |
+| `tests/test_crypto.py` | 18 passed | ZK proofs, PQ signatures, Merkle trees, signed chains |
+| `tests/test_sandbox.py` | 27 passed | Safe execution, filesystem isolation, malicious code rejection |
+| `tests/test_*.py` (other) | 51 passed | Memory, integration, belief ecology, goal collapse |
+| *Skipped* | 10 | Firejail tests (requires external binary) |
+
+*All tests run with `pytest tests/ -v`. Execution time: 3.18s.*
 
 ### Demo: All Systems Operational
 
