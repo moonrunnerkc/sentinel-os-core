@@ -1,10 +1,44 @@
 # Sentinel OS Core
 
-**Author:** Bradley R. Kinnard
-**License:** MIT
-**Python:** 3.12+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-Sentinel OS Core is a modular, offline-first cognitive operating system for synthetic intelligence. Designed for secure autonomous reasoning, persistent memory, and introspective goal evolution in air-gapped or adversarial environments.
+Modular, offline-first cognitive operating system for synthetic intelligence. Designed for autonomous reasoning, persistent memory, and goal evolution in air-gapped or adversarial environments.
+
+**Author:** Bradley R. Kinnard
+
+---
+
+## Table of Contents
+
+- [Why This Exists](#why-this-exists)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [CLI Usage](#cli-usage)
+- [Programmatic Usage](#programmatic-usage)
+- [Testing](#testing)
+- [Docker](#docker)
+- [Security Notes](#security-notes)
+- [Limitations](#limitations)
+- [License](#license)
+
+---
+
+## Why This Exists
+
+Most AI systems assume cloud connectivity and treat security as an afterthought. Sentinel OS Core is built for scenarios where:
+
+- Network access is unavailable or untrusted
+- Code execution must be sandboxed and auditable
+- Beliefs and goals must evolve deterministically
+- All state changes must be traceable
+
+This is not a chatbot framework. It is a cognitive substrate for autonomous systems.
+
+---
 
 ## Architecture
 
@@ -20,7 +54,7 @@ Sentinel OS Core is a modular, offline-first cognitive operating system for synt
 │  ┌──────▼────────────────▼─────────────────────▼──────────────┐ │
 │  │                    CORE ENGINE                              │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
-│  │  │ BeliefEcology│  │ GoalCollapse │  │ ContradictionTrc │  │ │
+│  │  │ BeliefEcology│  │ GoalCollapse │  │ContradictionTracer│ │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
@@ -34,70 +68,75 @@ Sentinel OS Core is a modular, offline-first cognitive operating system for synt
 │  ┌────────────────────────────▼───────────────────────────────┐ │
 │  │                   SECURITY LAYER                            │ │
 │  │  ┌──────────────┐  ┌────────────────────────────────────┐  │ │
-│  │  │   Sandbox    │  │ AuditLogger (HMAC signed)          │  │ │
+│  │  │   Sandbox    │  │ AuditLogger (HMAC-signed)          │  │ │
 │  │  └──────────────┘  └────────────────────────────────────┘  │ │
 │  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
 ## Features
 
-- **Offline-First**: No cloud dependencies, all computation local
-- **Belief Ecology**: Dynamic belief network with propagation and decay
-- **Goal Collapse**: RL-based goal evolution with differential privacy
-- **Contradiction Tracing**: Automatic detection and resolution
-- **Persistent Memory**: Async I/O with optional homomorphic encryption
-- **Episodic Replay**: LRU-based episode storage with deterministic sampling
-- **Sandbox Execution**: Best-effort code isolation with audit logging
-- **HMAC Audit Logs**: Tamper-evident logging with key rotation
-- **Introspection Graph**: D3.js visualization of belief/goal networks
+### Core (Implemented)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Belief Ecology** | Dynamic belief network with propagation and decay | [core/belief_ecology.py](core/belief_ecology.py) |
+| **Goal Collapse** | RL-based goal evolution with Laplace noise for differential privacy | [core/goal_collapse.py](core/goal_collapse.py) |
+| **Contradiction Tracing** | Automatic detection and resolution of conflicting beliefs | [core/contradiction_tracer.py](core/contradiction_tracer.py) |
+| **Persistent Memory** | Async I/O via aiofiles for belief/episode storage | [memory/persistent_memory.py](memory/persistent_memory.py) |
+| **Episodic Replay** | LRU-based episode storage with deterministic sampling | [memory/episodic_replay.py](memory/episodic_replay.py) |
+| **Sandbox Execution** | Restricted builtins, blocked imports (os, subprocess, eval, exec) | [security/sandbox.py](security/sandbox.py) |
+| **HMAC Audit Logs** | Tamper-evident logging with HKDF-derived session keys | [security/audit_logger.py](security/audit_logger.py) |
+| **Input Validation** | Blocks common prompt injection patterns | [interfaces/input_layer.py](interfaces/input_layer.py) |
+| **D3.js Visualizer** | Browser-based graph visualization for beliefs/goals | [graphs/visualizer.html](graphs/visualizer.html) |
+| **Local LLM Interface** | llama-cpp-python integration with GPU auto-detection | [interfaces/local_llm.py](interfaces/local_llm.py) |
+
+### Experimental (Config-Gated)
+
+These features are disabled by default. Enable via config flags. Some are stubs or mocks.
+
+| Feature | Config Flag | Status | Notes |
+|---------|-------------|--------|-------|
+| Homomorphic Encryption | `use_homomorphic_enc` | Stub | Imports TenSEAL if available, falls back gracefully |
+| Neuromorphic Mode | `neuromorphic_mode` | Stub | Imports brian2 if available, no functional SNN yet |
+| Firejail Sandbox | `use_firejail` | Optional | Checks for firejail binary, uses seccomp profile |
+| Post-Quantum Crypto | `pq_crypto` | Placeholder | Falls back to HKDF; Kyber/Dilithium not implemented |
+| Federated Sync | `enable_federated_sync` | Mock | Simulated ZKP proofs using random bytes |
+| World Models | `use_world_models` | Stub | Config flag exists, no physics simulation |
+
+---
 
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/sentinel-os-core.git
+git clone https://github.com/moonrunnerkc/sentinel-os-core.git
 cd sentinel-os-core
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Configuration
+### Dependencies
 
-Edit `config/system_config.yaml`:
+Core dependencies from [requirements.txt](requirements.txt):
 
-```yaml
-llm:
-  backend: llama-cpp
-  model_path: data/models/your-model.gguf
-  temperature: 0.0  # deterministic
-  seed: 42
-performance:
-  max_beliefs: 10000
-  max_episodes: 10000
-features:
-  use_world_models: false
-  neuromorphic_mode: false
-```
+- numpy, scipy, pyyaml, jsonschema, aiofiles
+- pytest, pytest-cov, pytest-timeout, pytest-benchmark
+- llama-cpp-python (optional, for LLM inference)
+- cryptography (for HMAC/HKDF)
+- flake8, mypy, bandit (dev tools)
 
-Edit `config/security_rules.json`:
+Optional (for experimental features):
 
-```json
-{
-  "use_firejail": false,
-  "hmac_key_seed": 42,
-  "pq_crypto": false,
-  "use_homomorphic_enc": false
-}
-```
+- tenseal (homomorphic encryption)
+- brian2 (neuromorphic simulation)
+- mujoco (physics simulation)
 
-## Usage
+---
 
-```bash
-python main.py --config config/system_config.yaml
-```
-
-### Programmatic Usage
+## Quick Start
 
 ```python
 from main import SentinelOS
@@ -123,70 +162,192 @@ print(os.get_status())
 os.stop()
 ```
 
-## Testing
+---
 
-```bash
-# fast tests only (CI)
-pytest tests/ -m "not slow and not chaos" -v
+## Configuration
 
-# all tests including slow
-pytest tests/ -m "not chaos" -v
+### System Config
 
-# chaos engineering tests
-pytest tests/ -m chaos -v
+Edit [config/system_config.yaml](config/system_config.yaml):
 
-# with coverage
-pytest tests/ --cov=. --cov-report=html
+```yaml
+llm:
+  backend: llama-cpp
+  model_path: data/models/your-model.gguf
+  temperature: 0.0
+  seed: 42
+  gpu_layers: 0
+
+performance:
+  max_beliefs: 10000
+  max_episodes: 10000
+  cache_size: 1000
+
+features:
+  use_world_models: false
+  neuromorphic_mode: false
+  enable_meta_evolution: false
 ```
 
+### Security Config
+
+Edit [config/security_rules.json](config/security_rules.json):
+
+```json
+{
+  "use_firejail": false,
+  "allowed_paths": ["data/"],
+  "hmac_key_seed": 42,
+  "seccomp_profile": "execve,ptrace",
+  "pq_crypto": false,
+  "use_homomorphic_enc": false,
+  "enable_federated_sync": false
+}
+```
+
+---
+
+## CLI Usage
+
+```bash
+python main.py --config config/system_config.yaml
+```
+
+---
+
+## Programmatic Usage
+
+```python
+from main import SentinelOS
+
+# initialize with custom paths
+os = SentinelOS(
+    config_path="config/system_config.yaml",
+    security_path="config/security_rules.json"
+)
+
+os.start()
+
+# process inputs
+result = os.process_input({
+    "type": "belief",
+    "content": "system is operational",
+    "priority": 0.8
+})
+
+# get system status
+status = os.get_status()
+print(f"Beliefs: {status['beliefs']}, Goals: {status['goals']}")
+
+# export introspection graph
+os.export_graph("data/graphs/snapshot.json")
+
+os.stop()
+```
+
+---
+
+## Testing
+
+### Run Tests
+
+```bash
+# fast tests (recommended for development)
+pytest tests/ -m "not slow and not chaos" -v
+
+# all tests except chaos
+pytest tests/ -m "not chaos" -v
+
+# chaos engineering tests (fault injection)
+pytest tests/ -m chaos -v
+
+# with coverage report
+pytest tests/ --cov=core --cov=memory --cov=security --cov=interfaces --cov-report=term-missing
+```
+
+### Run Benchmarks
+
+```bash
+pytest tests/benchmarks.py -v --benchmark-only
+```
+
+### Test Markers
+
+| Marker | Description |
+|--------|-------------|
+| `@pytest.mark.slow` | Large-scale tests (10k+ items) |
+| `@pytest.mark.chaos` | Fault injection tests |
+
+---
+
 ## Docker
+
+### Build and Run
 
 ```bash
 docker build -t sentinel-os .
 docker run --network none sentinel-os
 ```
 
-Or with docker-compose:
+### Docker Compose
 
 ```bash
 docker-compose up
 ```
 
-## Advanced Features (Experimental)
+The compose file runs with `network_mode: none` for offline isolation.
 
-These features are config-gated. Enable with caution:
+---
 
-- **World Models**: Causal counterfactual simulation (`use_world_models: true`)
-- **Neuromorphic Mode**: Brian2 SNN for low-power graph processing
-- **Homomorphic Encryption**: TenSEAL for private belief operations
-- **Federated Sync**: ZKP-based belief synchronization
-- **Post-Quantum Crypto**: Kyber/Dilithium HMAC signing
+## Security Notes
 
-## Performance KPIs
+### What Is Implemented
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Belief throughput | <50ms / 1k | ~20ms |
-| Goal collapse | <100ms | ~5ms |
-| Memory write | <1s / 1k | ~50ms |
-| Sandbox execution | <10ms | ~1ms |
-| Audit log write | <5ms | ~0.5ms |
+- **HMAC-signed audit logs**: Each log entry includes an HMAC computed with a session-derived key. Verification detects tampering. See [security/audit_logger.py](security/audit_logger.py).
 
-## Known Limitations
+- **Sandbox execution**: Blocks dangerous builtins (`__import__`, `eval`, `exec`, `compile`, `open`). Uses restricted globals. See [security/sandbox.py](security/sandbox.py).
 
-- **Sandbox**: Python-based, best-effort isolation. Not cryptographically secure against determined adversaries. For hostile code, use VMs or hardware isolation.
-- **LLM Reproducibility**: Outputs may vary slightly across hardware due to quantization.
-- **Scalability**: Tested to 10k beliefs/episodes. Larger scales require profiling.
-- **Advanced Features**: Experimental. Disable in production unless validated.
+- **Differential privacy**: Goal rewards include Laplace noise (epsilon=0.1 default). See [core/goal_collapse.py](core/goal_collapse.py).
 
-## Security
+- **Input validation**: Blocks common prompt injection patterns. See [interfaces/input_layer.py](interfaces/input_layer.py).
 
-- HMAC-signed audit logs prevent tampering
-- Differential privacy (ε=0.1) in RL rewards
-- Input validation blocks prompt injection (OWASP Top 10)
-- Sandbox blocks `os`, `subprocess`, `eval`, `exec`
-- Optional firejail with seccomp for enhanced isolation
+### What Is NOT Implemented
+
+- **Post-quantum cryptography**: The `pq_crypto` flag exists but falls back to SHA256-based HKDF. Kyber/Dilithium are not integrated.
+
+- **True homomorphic encryption**: TenSEAL is in requirements but the implementation is a stub that catches ImportError.
+
+- **Kernel-level isolation**: The Python sandbox is best-effort. For adversarial code, use VMs or hardware isolation.
+
+- **ZKP verification**: Federated sync uses random bytes as mock proofs. Not cryptographically valid.
+
+### Recommendations
+
+For production use in adversarial environments:
+
+1. Run inside a dedicated VM or container with no network
+2. Enable firejail if available (`use_firejail: true`)
+3. Do not trust the sandbox against malicious code
+4. Treat experimental features as research-only
+
+---
+
+## Limitations
+
+| Limitation | Details |
+|------------|---------|
+| **Sandbox escapes** | Python-based isolation is bypassable. Not a security boundary against determined attackers. |
+| **LLM reproducibility** | Outputs may vary across hardware due to quantization and floating-point differences. |
+| **Scalability** | Tested to 10k beliefs/episodes. Larger scales require profiling. |
+| **No CI/CD** | No GitHub Actions workflows. Tests run locally. |
+| **Experimental features** | Stubs only. Do not rely on them for production. |
+
+---
 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+---
+
+*Built for systems that must think alone.*
