@@ -61,16 +61,22 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 
 ### Benchmark Results
 
-![Benchmarks Part 1](docs/screenshots/benchmarks-1.png)
-![Benchmarks Part 2](docs/screenshots/benchmarks-2.png)
+📊 **[View Full Benchmark Screenshots](docs/screenshots/)**
 
-*Performance benchmarks showing:*
-- **HMAC signing**: 559,932 ops/sec (0.0018ms mean)
-- **DP noise**: 567,791 ops/sec (0.0018ms mean)
-- **ZK proof generation**: 15,043 ops/sec (0.0665ms mean)
-- **Contradiction detection**: 10,291 ops/sec (0.0972ms mean)
-- **Merkle tree build**: 7,535 ops/sec (0.1327ms mean)
-- **Belief insert**: 4,529 ops/sec (0.2208ms mean)
+Performance validated across 100 iterations per operation with statistical rigor (mean, std dev, P50/P95/P99 percentiles):
+
+| Operation | Mean | P95 | Ops/sec | What It Measures |
+|-----------|------|-----|---------|------------------|
+| **HMAC signing** | 0.0018ms | 0.0018ms | 559,932 | Tamper-evident log signing speed |
+| **DP noise** | 0.0018ms | 0.0020ms | 567,791 | Differential privacy noise generation |
+| **ZK proof gen** | 0.0665ms | 0.0871ms | 15,043 | Zero-knowledge state transition proofs |
+| **Contradiction detect** | 0.0972ms | 0.1203ms | 10,291 | Belief conflict detection |
+| **Merkle build** | 0.1327ms | 0.1543ms | 7,535 | Cryptographic commitment tree |
+| **State digest** | 0.1799ms | 0.1944ms | 5,558 | Full state hash computation |
+| **Belief insert** | 0.2208ms | 0.3770ms | 4,529 | Verified belief insertion with trace |
+| **Belief update** | 0.3565ms | 0.3864ms | 2,805 | Confidence update with invariant check |
+
+*Benchmarks run on seed=42 for reproducibility. See [benchmarks-1.png](docs/screenshots/benchmarks-1.png) and [benchmarks-2.png](docs/screenshots/benchmarks-2.png) for raw output.*
 
 ---
 
