@@ -5,12 +5,38 @@ llm:
   seed: 42
   gpu_layers: 0
   min_vram_gb: 4.0
+
 performance:
   max_beliefs: 10000
   max_episodes: 10000
   cache_size: 1000
+
 features:
   use_world_models: false
   use_counterfactual_sim: false
   neuromorphic_mode: false
   enable_meta_evolution: false
+
+# verification settings
+verification:
+  enabled: true
+  check_invariants_on_transition: true
+  property_test_iterations: 50
+
+# privacy settings
+privacy:
+  total_epsilon: 1.0
+  total_delta: 1.0e-5
+  composition_mode: basic
+
+# simulation backend preference: auto, scipy, mujoco, pybullet
+simulation:
+  preferred_backend: auto
+  default_dt: 0.01
+
+# isolation level: none, python, firejail, container, microvm
+isolation:
+  level: python
+  memory_limit_mb: 512
+  timeout_seconds: 30
+  network_enabled: false

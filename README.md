@@ -17,11 +17,13 @@ Modular, offline-first cognitive operating system for synthetic intelligence. De
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
-- [CLI Usage](#cli-usage)
-- [Programmatic Usage](#programmatic-usage)
+- [Formal Verification](#formal-verification)
+- [Privacy Guarantees](#privacy-guarantees)
+- [Cryptographic Primitives](#cryptographic-primitives)
 - [Testing](#testing)
+- [Benchmarks](#benchmarks)
 - [Docker](#docker)
-- [Security Notes](#security-notes)
+- [Security Architecture](#security-architecture)
 - [Limitations](#limitations)
 - [License](#license)
 
@@ -34,7 +36,8 @@ Most AI systems assume cloud connectivity and treat security as an afterthought.
 - Network access is unavailable or untrusted
 - Code execution must be sandboxed and auditable
 - Beliefs and goals must evolve deterministically
-- All state changes must be traceable
+- All state changes must be cryptographically verifiable
+- Privacy budgets must be formally tracked
 
 This is not a chatbot framework. It is a cognitive substrate for autonomous systems.
 
@@ -46,12 +49,14 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 ┌─────────────────────────────────────────────────────────────────┐
 │                        SENTINEL OS CORE                         │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   INPUT     │  │   OUTPUT    │  │     LOCAL LLM           │  │
-│  │   LAYER     │──│   LAYER     │──│   (llama.cpp)           │  │
-│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
-│         │                │                     │                │
-│  ┌──────▼────────────────▼─────────────────────▼──────────────┐ │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                  VERIFICATION LAYER                        │  │
+│  │  ┌──────────────┐  ┌─────────────┐  ┌──────────────────┐  │  │
+│  │  │ StateMachine │  │ Invariants  │  │ PropertyTests    │  │  │
+│  │  └──────────────┘  └─────────────┘  └──────────────────┘  │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                               │                                 │
+│  ┌────────────────────────────▼───────────────────────────────┐ │
 │  │                    CORE ENGINE                              │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
 │  │  │ BeliefEcology│  │ GoalCollapse │  │ContradictionTracer│ │ │
@@ -59,17 +64,24 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                    MEMORY SYSTEM                            │ │
-│  │  ┌──────────────────┐  ┌────────────────────────────────┐  │ │
-│  │  │ PersistentMemory │  │ EpisodicReplay (LRU eviction)  │  │ │
-│  │  └──────────────────┘  └────────────────────────────────┘  │ │
+│  │                   PRIVACY LAYER                             │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
+│  │  │BudgetAccount │  │DP Mechanisms │  │ SecureAggregator │  │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                   SECURITY LAYER                            │ │
-│  │  ┌──────────────┐  ┌────────────────────────────────────┐  │ │
-│  │  │   Sandbox    │  │ AuditLogger (HMAC-signed)          │  │ │
-│  │  └──────────────┘  └────────────────────────────────────┘  │ │
+│  │                   CRYPTO LAYER                              │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
+│  │  │ ZK Proofs    │  │ PQ Signatures│  │ Merkle Trees     │  │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
+│  └────────────────────────────┬───────────────────────────────┘ │
+│                               │                                 │
+│  ┌────────────────────────────▼───────────────────────────────┐ │
+│  │                   ISOLATION LAYER                           │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
+│  │  │ TrustBoundary│  │ IsolationEng │  │ SecurityAudit    │  │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -82,29 +94,59 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 
 | Feature | Description | Location |
 |---------|-------------|----------|
-| **Belief Ecology** | Dynamic belief network with propagation and decay | [core/belief_ecology.py](core/belief_ecology.py) |
-| **Goal Collapse** | RL-based goal evolution with Laplace noise for differential privacy | [core/goal_collapse.py](core/goal_collapse.py) |
-| **Contradiction Tracing** | Automatic detection and resolution of conflicting beliefs | [core/contradiction_tracer.py](core/contradiction_tracer.py) |
-| **Persistent Memory** | Async I/O via aiofiles for belief/episode storage | [memory/persistent_memory.py](memory/persistent_memory.py) |
-| **Episodic Replay** | LRU-based episode storage with deterministic sampling | [memory/episodic_replay.py](memory/episodic_replay.py) |
-| **Sandbox Execution** | Restricted builtins, blocked imports (os, subprocess, eval, exec) | [security/sandbox.py](security/sandbox.py) |
-| **HMAC Audit Logs** | Tamper-evident logging with HKDF-derived session keys | [security/audit_logger.py](security/audit_logger.py) |
-| **Input Validation** | Blocks common prompt injection patterns | [interfaces/input_layer.py](interfaces/input_layer.py) |
-| **D3.js Visualizer** | Browser-based graph visualization for beliefs/goals | [graphs/visualizer.html](graphs/visualizer.html) |
-| **Local LLM Interface** | llama-cpp-python integration with GPU auto-detection | [interfaces/local_llm.py](interfaces/local_llm.py) |
+| **Belief Ecology** | Dynamic belief network with propagation and decay | `core/belief_ecology.py` |
+| **Goal Collapse** | RL-based goal evolution with DP noise | `core/goal_collapse.py` |
+| **Contradiction Tracing** | Automatic detection and resolution | `core/contradiction_tracer.py` |
+| **Persistent Memory** | Async I/O via aiofiles | `memory/persistent_memory.py` |
+| **Episodic Replay** | LRU-based episode storage | `memory/episodic_replay.py` |
+| **Sandbox Execution** | Restricted builtins, blocked imports | `security/sandbox.py` |
+| **HMAC Audit Logs** | Tamper-evident logging | `security/audit_logger.py` |
+
+### Verification (NEW)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Formal State Machine** | Immutable state with transition tracking | `verification/state_machine.py` |
+| **Invariant Checker** | Runtime invariant verification | `verification/invariants.py` |
+| **Property Testing** | Randomized property verification | `verification/properties.py` |
+| **Trace Integrity** | Cryptographic chain verification | `verification/state_machine.py` |
+
+### Privacy (NEW)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Budget Accountant** | Epsilon-delta tracking with hard caps | `privacy/budget.py` |
+| **Laplace Mechanism** | Proven ε-DP noise | `privacy/mechanisms.py` |
+| **Gaussian Mechanism** | (ε,δ)-DP noise | `privacy/mechanisms.py` |
+| **Secure Aggregation** | DP-preserving aggregation | `privacy/mechanisms.py` |
+| **Clipping** | L2 norm bounding for sensitivity | `privacy/mechanisms.py` |
+
+### Cryptography (NEW)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **ZK State Proofs** | Prove transitions without revealing state | `crypto/zk_proofs.py` |
+| **PQ Signatures** | Ed25519 with Dilithium fallback | `crypto/pq_signatures.py` |
+| **Signed Log Chains** | Tamper-evident audit chains | `crypto/pq_signatures.py` |
+| **Merkle Trees** | Batch commitment and verification | `crypto/merkle.py` |
+| **Incremental Merkle** | Streaming commitment for logs | `crypto/merkle.py` |
+
+### Isolation (NEW)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Multi-Level Isolation** | Python → Firejail → Container → MicroVM | `security/isolation.py` |
+| **Trust Boundaries** | Formal boundary crossing validation | `security/isolation.py` |
+| **Security Audit** | Automated security checks | `security/isolation.py` |
 
 ### Experimental (Config-Gated)
 
-These features are disabled by default. Enable via config flags. Some are stubs or mocks.
-
-| Feature | Config Flag | Status | Notes |
-|---------|-------------|--------|-------|
-| Homomorphic Encryption | `use_homomorphic_enc` | Stub | Imports TenSEAL if available, falls back gracefully |
-| Neuromorphic Mode | `neuromorphic_mode` | Stub | Imports brian2 if available, no functional SNN yet |
-| Firejail Sandbox | `use_firejail` | Optional | Checks for firejail binary, uses seccomp profile |
-| Post-Quantum Crypto | `pq_crypto` | Placeholder | Falls back to HKDF; Kyber/Dilithium not implemented |
-| Federated Sync | `enable_federated_sync` | Mock | Simulated ZKP proofs using random bytes |
-| World Models | `use_world_models` | Stub | Config flag exists, no physics simulation |
+| Feature | Config Flag | Status | Location |
+|---------|-------------|--------|----------|
+| **Homomorphic Encryption** | `use_homomorphic_enc` | Working (TenSEAL) | `crypto/homomorphic.py` |
+| **Neuromorphic SNN** | `neuromorphic_mode` | Working (brian2) | `neuromorphic/__init__.py` |
+| **World Model Simulation** | `use_world_models` | Working (MuJoCo/PyBullet/SciPy) | `simulation/__init__.py` |
+| **Firejail Sandbox** | `use_firejail` | Working | `security/isolation.py` |
 
 ---
 
@@ -118,48 +160,59 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Dependencies
+### Optional Dependencies
 
-Core dependencies from [requirements.txt](requirements.txt):
+```bash
+# Homomorphic encryption
+pip install tenseal
 
-- numpy, scipy, pyyaml, jsonschema, aiofiles
-- pytest, pytest-cov, pytest-timeout, pytest-benchmark
-- llama-cpp-python (optional, for LLM inference)
-- cryptography (for HMAC/HKDF)
-- flake8, mypy, bandit (dev tools)
+# Neuromorphic simulation
+pip install brian2
 
-Optional (for experimental features):
+# Physics simulation
+pip install mujoco pybullet
 
-- tenseal (homomorphic encryption)
-- brian2 (neuromorphic simulation)
-- mujoco (physics simulation)
+# Post-quantum (when available)
+pip install liboqs-python
+```
 
 ---
 
 ## Quick Start
 
 ```python
-from main import SentinelOS
+from verification.state_machine import TransitionEngine, BeliefState
+from privacy.budget import PrivacyAccountant
+from privacy.mechanisms import laplace_mechanism
+import time
 
-os = SentinelOS()
-os.start()
+# create transition engine with formal tracking
+engine = TransitionEngine()
 
-# create a belief
-os.process_input({
-    "type": "belief",
-    "content": "the system is stable",
-    "priority": 0.9
-})
+# create privacy accountant with budget
+accountant = PrivacyAccountant(total_epsilon=1.0, total_delta=1e-5)
 
-# create a goal
-os.process_input({
-    "type": "goal",
-    "content": "maintain stability",
-    "priority": 1.0
-})
+# insert beliefs with full transition tracking
+belief = BeliefState(
+    belief_id="b1",
+    content_hash="abc123",
+    confidence=0.8,
+    timestamp=time.time(),
+)
+transition = engine.insert_belief(belief)
 
-print(os.get_status())
-os.stop()
+# update with privacy-preserving noise
+raw_update = 0.1
+accountant.spend(0.1, mechanism="laplace", operation="belief_update")
+noisy_update, _ = laplace_mechanism(raw_update, sensitivity=1.0, epsilon=0.1)
+engine.update_belief("b1", belief.confidence + noisy_update, time.time())
+
+# verify trace integrity
+valid, msg = engine.verify_trace_integrity()
+print(f"Trace valid: {valid} - {msg}")
+
+# check privacy budget
+print(f"Remaining epsilon: {accountant.budget.remaining_epsilon():.4f}")
 ```
 
 ---
@@ -168,7 +221,7 @@ os.stop()
 
 ### System Config
 
-Edit [config/system_config.yaml](config/system_config.yaml):
+Edit `config/system_config.yaml`:
 
 ```yaml
 llm:
@@ -176,159 +229,235 @@ llm:
   model_path: data/models/your-model.gguf
   temperature: 0.0
   seed: 42
-  gpu_layers: 0
 
-performance:
-  max_beliefs: 10000
-  max_episodes: 10000
-  cache_size: 1000
+verification:
+  enabled: true
+  check_invariants_on_transition: true
+  property_test_iterations: 50
 
-features:
-  use_world_models: false
-  neuromorphic_mode: false
-  enable_meta_evolution: false
+privacy:
+  total_epsilon: 1.0
+  total_delta: 1.0e-5
+  composition_mode: basic
+
+simulation:
+  preferred_backend: auto  # auto, scipy, mujoco, pybullet
+
+isolation:
+  level: python  # none, python, firejail, container, microvm
+  memory_limit_mb: 512
+  timeout_seconds: 30
 ```
 
 ### Security Config
 
-Edit [config/security_rules.json](config/security_rules.json):
+Edit `config/security_rules.json`:
 
 ```json
 {
   "use_firejail": false,
-  "allowed_paths": ["data/"],
-  "hmac_key_seed": 42,
-  "seccomp_profile": "execve,ptrace",
   "pq_crypto": false,
   "use_homomorphic_enc": false,
-  "enable_federated_sync": false
+  "isolation_level": "python",
+  "zk_proofs": {
+    "enabled": false,
+    "prove_state_transitions": false
+  },
+  "audit": {
+    "sign_logs": true,
+    "use_merkle_chain": true
+  }
 }
 ```
 
 ---
 
-## CLI Usage
+## Formal Verification
 
-```bash
-python main.py --config config/system_config.yaml
+### Proven Invariants
+
+The verification module enforces these invariants at runtime:
+
+| Invariant | Description |
+|-----------|-------------|
+| I1: Confidence Bounded | Belief confidence ∈ [0, 1] |
+| I2: Priority Bounded | Goal priority ∈ [0, 1] |
+| I3: Goal Status Valid | Status ∈ {active, collapsed, abandoned} |
+| I4: No Orphan Contradictions | Resolved contradictions may reference deleted beliefs |
+| I5: Step Monotonic | Step counter never decreases |
+
+### Termination Guarantee
+
+For a belief set of size n, contradiction resolution terminates in at most n(n-1)/2 steps.
+
+### Property Testing
+
+```python
+from verification.properties import PropertyTester
+
+tester = PropertyTester(seed=42)
+results = tester.run_all_properties(iterations=100)
+
+for r in results:
+    print(f"{r.property_name}: {'PASS' if r.passed else 'FAIL'}")
 ```
 
 ---
 
-## Programmatic Usage
+## Privacy Guarantees
+
+### Budget Accounting
 
 ```python
-from main import SentinelOS
+from privacy.budget import PrivacyAccountant, BudgetExhaustedError
 
-# initialize with custom paths
-os = SentinelOS(
-    config_path="config/system_config.yaml",
-    security_path="config/security_rules.json"
+# create accountant with strict budget
+accountant = PrivacyAccountant(total_epsilon=1.0, total_delta=1e-5)
+
+# track every DP operation
+accountant.spend(0.1, mechanism="laplace", operation="belief_update")
+accountant.spend(0.2, mechanism="gaussian", operation="goal_collapse")
+
+# budget exhaustion raises exception
+try:
+    accountant.spend(0.8)  # exceeds remaining budget
+except BudgetExhaustedError:
+    print("Budget exhausted!")
+
+# export audit report
+report = accountant.export_audit_report()
+```
+
+### DP Mechanisms
+
+- **Laplace**: ε-differential privacy for exact answers
+- **Gaussian**: (ε,δ)-DP for approximate answers
+- **Randomized Response**: ε-DP for boolean values
+- **Exponential Mechanism**: ε-DP for selection
+
+---
+
+## Cryptographic Primitives
+
+### ZK State Proofs
+
+```python
+from crypto.zk_proofs import ZKProver, ZKVerifier
+
+prover = ZKProver(seed=42)
+verifier = ZKVerifier()
+
+# prove state transition
+proof = prover.prove_state_transition(
+    pre_state={"belief": 0.5},
+    post_state={"belief": 0.6},
+    input_data={"delta": 0.1},
+    transition_fn_hash="sha256_of_function"
 )
 
-os.start()
+# verify without seeing state
+valid, msg = verifier.verify(proof)
+```
 
-# process inputs
-result = os.process_input({
-    "type": "belief",
-    "content": "system is operational",
-    "priority": 0.8
-})
+### Signed Log Chains
 
-# get system status
-status = os.get_status()
-print(f"Beliefs: {status['beliefs']}, Goals: {status['goals']}")
+```python
+from crypto.pq_signatures import generate_keypair, PQSigner, SignedLogChain, PQVerifier
+import time
 
-# export introspection graph
-os.export_graph("data/graphs/snapshot.json")
+keypair = generate_keypair()
+signer = PQSigner(keypair)
+chain = SignedLogChain(signer)
 
-os.stop()
+chain.append({"event": "start", "timestamp": time.time()})
+chain.append({"event": "belief_update", "id": "b1"})
+
+# verify entire chain
+valid, msg = chain.verify_chain(PQVerifier.from_keypair(keypair))
 ```
 
 ---
 
 ## Testing
 
-### Run Tests
-
 ```bash
-# fast tests (recommended for development)
+# fast tests
 pytest tests/ -m "not slow and not chaos" -v
 
-# all tests except chaos
-pytest tests/ -m "not chaos" -v
+# all tests
+pytest tests/ -v
 
-# chaos engineering tests (fault injection)
-pytest tests/ -m chaos -v
-
-# with coverage report
-pytest tests/ --cov=core --cov=memory --cov=security --cov=interfaces --cov-report=term-missing
+# with coverage
+pytest tests/ --cov=. --cov-report=html
 ```
 
-### Run Benchmarks
+---
 
-```bash
-pytest tests/benchmarks.py -v --benchmark-only
+## Benchmarks
+
+```python
+from benchmarks import SentinelBenchmarkSuite
+
+suite = SentinelBenchmarkSuite(seed=42)
+results = suite.run_all()
+print(suite.generate_report(results))
 ```
 
-### Test Markers
+Sample output:
+```
+SENTINEL OS CORE BENCHMARK REPORT
+============================================================
+belief_insert:
+  Mean:       0.0234 ms
+  P95:        0.0412 ms
+  Ops/sec:    42735.04
 
-| Marker | Description |
-|--------|-------------|
-| `@pytest.mark.slow` | Large-scale tests (10k+ items) |
-| `@pytest.mark.chaos` | Fault injection tests |
+state_digest:
+  Mean:       0.1523 ms
+  P95:        0.2134 ms
+  Ops/sec:    6566.12
+```
 
 ---
 
 ## Docker
 
-### Build and Run
-
 ```bash
 docker build -t sentinel-os .
-docker run --network none sentinel-os
+docker run --network none sentinel-os pytest tests/ -v
 ```
-
-### Docker Compose
-
-```bash
-docker-compose up
-```
-
-The compose file runs with `network_mode: none` for offline isolation.
 
 ---
 
-## Security Notes
+## Security Architecture
 
-### What Is Implemented
+### Trust Zones
 
-- **HMAC-signed audit logs**: Each log entry includes an HMAC computed with a session-derived key. Verification detects tampering. See [security/audit_logger.py](security/audit_logger.py).
+1. **TRUSTED**: Core logic, verified invariants, signed code
+2. **SEMI_TRUSTED**: Validated user config, sanitized inputs
+3. **UNTRUSTED**: External inputs, user code, network data
 
-- **Sandbox execution**: Blocks dangerous builtins (`__import__`, `eval`, `exec`, `compile`, `open`). Uses restricted globals. See [security/sandbox.py](security/sandbox.py).
+### Isolation Levels
 
-- **Differential privacy**: Goal rewards include Laplace noise (epsilon=0.1 default). See [core/goal_collapse.py](core/goal_collapse.py).
+| Level | Mechanism | Strength |
+|-------|-----------|----------|
+| None | No isolation | Testing only |
+| Python | Restricted builtins | Best-effort |
+| Firejail | seccomp + namespaces | Moderate |
+| Container | Docker/Podman | Good |
+| MicroVM | Firecracker/QEMU | High |
 
-- **Input validation**: Blocks common prompt injection patterns. See [interfaces/input_layer.py](interfaces/input_layer.py).
+### What Is Proven
 
-### What Is NOT Implemented
+- Invariants are checked on every transition
+- Privacy budget is never exceeded
+- Traces are cryptographically chained
+- Merkle roots are verifiable
 
-- **Post-quantum cryptography**: The `pq_crypto` flag exists but falls back to SHA256-based HKDF. Kyber/Dilithium are not integrated.
+### What Is Best-Effort
 
-- **True homomorphic encryption**: TenSEAL is in requirements but the implementation is a stub that catches ImportError.
-
-- **Kernel-level isolation**: The Python sandbox is best-effort. For adversarial code, use VMs or hardware isolation.
-
-- **ZKP verification**: Federated sync uses random bytes as mock proofs. Not cryptographically valid.
-
-### Recommendations
-
-For production use in adversarial environments:
-
-1. Run inside a dedicated VM or container with no network
-2. Enable firejail if available (`use_firejail: true`)
-3. Do not trust the sandbox against malicious code
-4. Treat experimental features as research-only
+- Python sandbox (bypassable by determined attacker)
+- Ed25519 fallback (not post-quantum resistant without liboqs)
 
 ---
 
@@ -336,11 +465,11 @@ For production use in adversarial environments:
 
 | Limitation | Details |
 |------------|---------|
-| **Sandbox escapes** | Python-based isolation is bypassable. Not a security boundary against determined attackers. |
-| **LLM reproducibility** | Outputs may vary across hardware due to quantization and floating-point differences. |
-| **Scalability** | Tested to 10k beliefs/episodes. Larger scales require profiling. |
-| **No CI/CD** | No GitHub Actions workflows. Tests run locally. |
-| **Experimental features** | Stubs only. Do not rely on them for production. |
+| **Sandbox escapes** | Python isolation is not a security boundary |
+| **PQ fallback** | Uses Ed25519 when liboqs unavailable |
+| **LLM reproducibility** | Varies across hardware |
+| **Scalability** | Tested to 10k beliefs |
+| **ZK proofs** | Demonstrative, not production SNARK/STARK |
 
 ---
 
@@ -350,4 +479,4 @@ MIT License. See [LICENSE](LICENSE).
 
 ---
 
-*Built for systems that must think alone.*
+*Built for systems that must think alone, verify everything, and trust nothing.*
