@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-233%20passed-brightgreen.svg)](#verification-evidence)
+[![Tests](https://img.shields.io/badge/tests-360%20passed-brightgreen.svg)](#verification-evidence)
 
 Modular, offline-first cognitive operating system for synthetic intelligence. Designed for autonomous reasoning, persistent memory, and goal evolution in air-gapped or adversarial environments.
 
@@ -12,22 +12,14 @@ Modular, offline-first cognitive operating system for synthetic intelligence. De
 
 ## Table of Contents
 
-- [Why This Exists](#why-this-exists)
-- [Verification Evidence](#verification-evidence)
-- [Architecture](#architecture)
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Formal Verification](#formal-verification)
-- [Privacy Guarantees](#privacy-guarantees)
-- [Cryptographic Primitives](#cryptographic-primitives)
-- [Testing](#testing)
-- [Benchmarks](#benchmarks)
-- [Docker](#docker)
-- [Security Architecture](#security-architecture)
-- [Limitations](#limitations)
-- [License](#license)
+| Start Here | System | Assurance | Ops |
+|------------|--------|----------|-----|
+| [Why This Exists](#why-this-exists) | [Architecture](#architecture) | [Verification Evidence](#verification-evidence) | [Installation](#installation) |
+| [Quick Start](#quick-start) | [Features](#features) | [Formal Verification](#formal-verification) | [Configuration](#configuration) |
+|  |  | [Privacy Guarantees](#privacy-guarantees) | [Testing](#testing) |
+|  |  | [Cryptographic Primitives](#cryptographic-primitives) | [Benchmarks](#benchmarks) |
+|  |  | [Security Architecture](#security-architecture) | [Docker](#docker) |
+|  |  | [Limitations](#limitations) | [License](#license) |
 
 ---
 
