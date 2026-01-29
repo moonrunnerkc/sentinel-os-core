@@ -67,6 +67,7 @@ class ExtendedBenchmarkResult:
     seed: int
     timestamp: str
     episode_metrics: list[dict] = field(default_factory=list)
+    hardware_info: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -361,6 +362,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--log-every", type=int, default=100, help="Log progress every N episodes")
     parser.add_argument("--output", type=str, default="data/logs", help="Output directory")
+    parser.add_argument("--hardware", action="store_true", help="Log hardware info with results")
     args = parser.parse_args()
 
     suite = ExtendedBenchmarkSuite(seed=args.seed, output_dir=args.output)
@@ -370,6 +372,15 @@ def main():
         log_every=args.log_every,
     )
     suite.print_summary(result)
+
+    # add hardware info if requested
+    if args.hardware:
+        from utils.helpers import get_hardware_info
+        result.hardware_info = get_hardware_info()
+        print("\n=== Hardware Info ===")
+        for k, v in result.hardware_info.items():
+            print(f"  {k}: {v}")
+
     log_path = suite.save_raw_logs(result)
     print(f"\nRaw logs: {log_path}")
 

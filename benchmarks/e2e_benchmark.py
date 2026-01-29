@@ -714,6 +714,37 @@ def run_e2e_benchmarks(seed: int = 42) -> list[E2EBenchmarkResult]:
 
 
 if __name__ == "__main__":
-    suite = E2EBenchmarkSuite(seed=42)
-    suite.run_standard_suite()
+    import argparse
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser(description="Sentinel OS Core E2E Benchmarks")
+    parser.add_argument("--seed", type=int, default=42, help="random seed")
+    parser.add_argument("--hardware", action="store_true", help="log hardware info with results")
+    parser.add_argument("--output", type=str, help="custom output path for results JSON")
+    args = parser.parse_args()
+
+    suite = E2EBenchmarkSuite(seed=args.seed)
+    results = suite.run_standard_suite()
     print(suite.generate_report())
+
+    # save results with optional hardware info
+    output_data = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "seed": args.seed,
+        "results": [r.to_dict() for r in results],
+    }
+
+    if args.hardware:
+        from utils.helpers import get_hardware_info
+        output_data["hardware"] = get_hardware_info()
+        print("\n=== Hardware Info ===")
+        for k, v in output_data["hardware"].items():
+            print(f"  {k}: {v}")
+
+    # save to file
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    output_path = args.output or f"data/logs/e2e_benchmark_{ts}.json"
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(output_data, f, indent=2)
+    print(f"\nResults saved to: {output_path}")

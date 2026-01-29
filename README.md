@@ -138,6 +138,31 @@ Real-world workload benchmarks measuring complete operations across all system l
 
 *All thresholds passed. Run `python -m benchmarks.e2e_benchmark` for live results.*
 
+### Benchmark Environment
+
+All benchmarks above were run on the following system:
+
+| Component | Details |
+|-----------|---------|
+| **OS** | Ubuntu 22.04.5 LTS (Jammy) |
+| **Kernel** | 6.8.0-90-generic (x86_64) |
+| **Hostname** | rogue |
+| **CPU** | Intel i5-11400F @ 2.60GHz (6 cores / 12 threads, turbo to 4.4GHz) |
+| **RAM** | 32GB (24GB available) |
+| **Swap** | 10GB |
+| **Disk** | 906GB NVMe, 118GB free (87% used) |
+| **GPU** | NVIDIA RTX 5070 (12GB VRAM, driver 570.195.03) |
+
+**Want to contribute benchmark results from other hardware?**
+
+We'd love results from ARM, Windows, macOS, or other setups. To submit:
+
+1. Run: `python -m benchmarks.e2e_benchmark --hardware` (auto-logs your specs)
+2. Open an issue with the `benchmark-results` label
+3. Attach the generated JSON from `data/logs/`
+
+This helps validate cross-platform performance and identify hardware-specific bottlenecks.
+
 ---
 
 ## Architecture
@@ -717,6 +742,35 @@ except IsolationUnavailableError as e:
 | **Scalability** | Tested to 10k beliefs |
 | **Neuromorphic** | Requires brian2, no mock mode |
 
+### Security Gaps (Future Work)
+
+The following are acknowledged needs for production deployment, not yet implemented:
+
+| Gap | Status | Notes |
+|-----|--------|-------|
+| **External security audit** | Not done | Required before production use |
+| **Bug bounty program** | Not started | Needed for adversarial testing |
+| **WebAssembly isolation** | Not implemented | Would provide stronger sandbox than Python |
+| **CVE tracking** | Not established | Need formal vulnerability disclosure process |
+| **FIPS 140-2 compliance** | Not verified | Crypto primitives need certification |
+| **Penetration testing** | Not done | Need red team engagement |
+
+These are tracked in the [roadmap](#roadmap) for v1.0.
+
+### Future Work (Not Yet Implemented)
+
+The following are recognized needs for production readiness but are **not yet implemented**:
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **External security audit** | 🔮 Planned v1.0 | No third-party audit yet; use at your own risk |
+| **Bug bounty program** | 🔮 Planned | Will consider after v0.5 stabilization |
+| **WebAssembly isolation** | 🔮 Research | Potential future alternative to Python sandboxing |
+| **CVE tracking** | 🔮 Planned | Will establish formal vulnerability disclosure process |
+| **FIPS certification** | 🔮 Not planned | Crypto is research-grade, not certified |
+
+**Until these are addressed, this project is suitable for research and prototyping, not production security-critical systems.**
+
 ---
 
 ## Implemented Features (Phase 1 Complete)
@@ -767,13 +821,16 @@ make test
 - [x] ZK proofs (discrete-log scope)
 - [x] Extended benchmarks (1000+ episodes)
 - [x] Threat model documentation
+- [x] Core-only mode integration tests
 
 ### Next: v0.2.x
 
+- [ ] **Modular extraction**: Extract `privacy.budget` as standalone `sentinel-privacy` on PyPI
 - [ ] Local LLM integration (llama.cpp)
 - [ ] Enhanced isolation (seccomp profiles)
 - [ ] Range proofs (Bulletproofs)
 - [ ] Consensus protocol stubs
+- [ ] SMT-based invariant checking (z3-solver)
 
 ### Future: v1.0
 

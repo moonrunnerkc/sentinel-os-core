@@ -36,3 +36,6 @@ llama-cpp-python>=0.2.0
 
 # Post-quantum (optional - install via pip install liboqs-python)
 # liboqs-python>=0.7.0
+
+# SMT solver for formal verification (optional but recommended)
+z3-solver>=4.12.0
