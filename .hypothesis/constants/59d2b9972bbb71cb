@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/crypto/pq_signatures.py
+# hypothesis_version: 6.151.3
+
+[',', ':', 'Dilithium3', 'Verifier', 'algorithm', 'big', 'created_at', 'dilithium3', 'dilithium_public', 'ed25519', 'ed25519_public', 'empty chain', 'entry', 'genesis', 'hybrid', 'index', 'key_id', 'payload', 'prev_hash', 'public_key', 'signature', 'signature invalid', 'signature valid', 'signed_at', 'timestamp']

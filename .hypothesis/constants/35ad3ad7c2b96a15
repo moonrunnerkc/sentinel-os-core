@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/verification/properties.py
+# hypothesis_version: 6.151.3
+
+[-10.0, 0.0, 0.5, 1.0, 10.0, 100, 1000, 1000000, 'abandoned', 'active', 'belief_id', 'collapsed', 'confidence', 'digest_a', 'digest_b', 'exception', 'insert_belief', 'iteration', 'message', 'new_confidence', 'op', 'property_test', 'result', 'returned False', 'trace_integrity', 'update_belief', 'violations']

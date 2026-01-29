@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/verification/formal_checker.py
+# hypothesis_version: 6.151.3
+
+[0.0, 1.0, 1000, ',', ':', '_', '_hash', '_limits', 'beliefs', 'confidence', 'context', 'digest', 'duration_ms', 'episodes', 'failed', 'goals', 'max_beliefs', 'max_episodes', 'memory_within_limits', 'message', 'name', 'passed', 'priority', 'result', 'results', 'skipped', 'timestamp', 'total', 'total_checks']

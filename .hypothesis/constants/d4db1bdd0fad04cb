@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/core/goal_collapse.py
+# hypothesis_version: 6.151.3
+
+[-0.05, 0.0, 1e-05, 0.05, 0.1, 1.0, 1000, 'created_at', 'description', 'goal not found', 'id', 'parent', 'priority', 'updated_at']

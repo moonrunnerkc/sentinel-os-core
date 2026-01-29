@@ -1,24 +1,37 @@
 # Author: Bradley R. Kinnard
 # security module exports
 
-from security.soft_isolation import (
-    SoftIsolation,
+from security.isolation import (
+    Isolation,
+    IsolationLevel,
     IsolationConfig,
+    IsolationUnavailableError,
     ExecutionResult,
-    ThreatModel,
     TrustBoundary,
     SecurityViolation,
-    Sandbox,  # backwards compat
+    LEVEL_THREAT_MODELS,
+    get_level_threat_model,
+    check_level_available,
+    # backwards compatibility
+    SoftIsolation,
+    Sandbox,
 )
 from security.audit_logger import AuditLogger
 
 __all__ = [
-    "SoftIsolation",
+    # new exports
+    "Isolation",
+    "IsolationLevel",
     "IsolationConfig",
+    "IsolationUnavailableError",
     "ExecutionResult",
-    "ThreatModel",
     "TrustBoundary",
     "SecurityViolation",
-    "Sandbox",
+    "LEVEL_THREAT_MODELS",
+    "get_level_threat_model",
+    "check_level_available",
     "AuditLogger",
+    # backwards compatibility
+    "SoftIsolation",
+    "Sandbox",
 ]

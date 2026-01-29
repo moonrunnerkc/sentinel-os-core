@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/core/belief_ecology.py
+# hypothesis_version: 6.151.3
+
+[0.0, 0.01, 0.5, 1.0, 'confidence', 'content', 'created_at', 'id', 'source', 'updated_at']

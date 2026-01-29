@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/privacy/mechanisms.py
+# hypothesis_version: 6.151.3
+
+[1e-06, 0.5, 1.0, 1.25, 'clip_bound', 'clipped_norm', 'delta', 'epsilon', 'exponential', 'gaussian', 'laplace', 'max_norm', 'mechanism', 'n_values', 'noise_magnitude', 'noisy_mean', 'noisy_sum', 'original_norm', 'p_truth', 'probabilities', 'randomized_response', 'raw_sum', 'scale', 'seed', 'selected', 'selected_score', 'sensitivity', 'sigma', 'was_clipped', 'was_truthful']

@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/security/audit_logger.py
+# hypothesis_version: 6.151.3
+
+['INFO', 'big', 'data/logs', 'details', 'entries', 'event', 'hmac', 'level', 'pq_crypto', 'r', 'sequence', 'session_id', 'timestamp', 'w']

@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/privacy/__init__.py
+# hypothesis_version: 6.151.3
+
+[1e-05, 1.0, 'BudgetExhaustedError', 'PrivacyAccountant', 'PrivacyBudget', 'PrivacySpend', 'clip_l2_norm', 'gaussian_mechanism', 'get_privacy_enforcer', 'laplace_mechanism']

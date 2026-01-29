@@ -1,8 +1,10 @@
 {
+  "isolation_level": "python_sandbox",
   "use_firejail": false,
   "allowed_paths": ["data/"],
   "hmac_key_seed": 42,
   "seccomp_profile": "execve,ptrace",
+  "signature_algorithm": "ed25519",
   "audit": {
     "sign_logs": true,
     "use_merkle_chain": true

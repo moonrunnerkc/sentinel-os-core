@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/interfaces/output_layer.py
+# hypothesis_version: 6.151.3
+
+[1000, '...', 'ERROR', '[REDACTED]', 'belief', 'code', 'content', 'description', 'error', 'filtered', 'goal', 'message', 'metadata', 'secret\\s*[:=]\\s*\\S+', 'text', 'token\\s*[:=]\\s*\\S+', 'type']

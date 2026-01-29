@@ -18,15 +18,28 @@ from crypto.pq_signatures import (
     SignedLogChain,
     generate_keypair,
     Algorithm,
+    PQUnavailableError,
+    algorithm_from_config,
+    liboqs_available,
 )
 from crypto.merkle import (
     MerkleTree,
     MerkleProof,
     IncrementalMerkleTree,
 )
+from crypto.zk_proofs import (
+    PedersenCommitment,
+    PedersenScheme,
+    SchnorrProof,
+    SchnorrProver,
+    SchnorrVerifier,
+    StateTransitionProof,
+    StateTransitionProver,
+    StateTransitionVerifier,
+)
 
 __all__ = [
-    # commitments (replaces zk_proofs)
+    # commitments
     "Commitment",
     "CommitmentOpening",
     "CommitmentScheme",
@@ -42,8 +55,20 @@ __all__ = [
     "SignedLogChain",
     "generate_keypair",
     "Algorithm",
+    "PQUnavailableError",
+    "algorithm_from_config",
+    "liboqs_available",
     # merkle
     "MerkleTree",
     "MerkleProof",
     "IncrementalMerkleTree",
+    # zk proofs
+    "PedersenCommitment",
+    "PedersenScheme",
+    "SchnorrProof",
+    "SchnorrProver",
+    "SchnorrVerifier",
+    "StateTransitionProof",
+    "StateTransitionProver",
+    "StateTransitionVerifier",
 ]

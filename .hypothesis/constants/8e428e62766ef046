@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/privacy/budget.py
+# hypothesis_version: 6.151.3
+
+[0.0, 1e-10, 1e-05, 1.0, 1.25, 'ERROR', 'INFO', 'PrivacyAccountant', 'basic', 'budget', 'composition_mode', 'delta', 'delta overspent', 'details', 'epsilon', 'epsilon overspent', 'exhausted', 'exported_at', 'gaussian', 'history', 'invariants_message', 'invariants_valid', 'laplace', 'mechanism', 'operation', 'privacy_spend', 'query count mismatch', 'query_count', 'remaining_delta', 'remaining_epsilon', 'requested_delta', 'requested_epsilon', 'spent_delta', 'spent_epsilon', 'timestamp', 'total_delta', 'total_epsilon', 'unknown']

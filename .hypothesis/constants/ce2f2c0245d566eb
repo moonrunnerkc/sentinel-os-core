@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/interfaces/local_llm.py
+# hypothesis_version: 6.151.3
+
+[0.0, 256, 'choices', 'llama-cpp', 'text']

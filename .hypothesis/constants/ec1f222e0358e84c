@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/verification/state_machine.py
+# hypothesis_version: 6.151.3
+
+[0.0, 1.0, ',', ':', 'BeliefState', 'GoalState', 'SystemState', 'abandoned', 'active', 'belief', 'belief_a_id', 'belief_b_id', 'belief_id', 'beliefs', 'collapsed', 'confidence', 'content_hash', 'contradiction_id', 'contradictions', 'details', 'detected_at', 'empty trace', 'goal_id', 'goals', 'input_digest', 'new_confidence', 'old_confidence', 'parent_id', 'post_state_digest', 'pre_state_digest', 'priority', 'resolution_strategy', 'resolved', 'seed', 'source', 'status', 'step_counter', 'step_number', 'strategy', 'timestamp', 'trace valid', 'transition_type', 'unknown']

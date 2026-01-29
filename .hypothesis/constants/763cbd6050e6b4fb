@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/verification/invariants.py
+# hypothesis_version: 6.151.3
+
+[0.0, 1.0, 'I2_priority_bounded', 'I3_goal_status_valid', 'I5_step_monotonic', 'abandoned', 'active', 'collapsed', 'determinism verified', 'exception', 'state_step', 'step counter valid']

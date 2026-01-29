@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/core/meta_cognition.py
+# hypothesis_version: 6.151.3
+
+[0.0, 1e-06, 1e-05, 0.01, 0.05, 0.1, 0.2, 1.0, 1000, 'avg_convergence_time', 'avg_reward', 'converged', 'decay_rate', 'epsilon', 'exploration', 'final_score', 'hyperparams', 'iterations', 'learning_rate', 'reward', 'seed', 'success_rate']

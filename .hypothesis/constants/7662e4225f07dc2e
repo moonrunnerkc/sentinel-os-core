@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/interfaces/input_layer.py
+# hypothesis_version: 6.151.3
+
+[10000, '<\\s*system\\s*>', '\\[\\s*system\\s*\\]', '\\s+', 'act\\s+as\\s+if', 'belief', 'command', 'content', 'data', 'enum', 'errors', 'goal', 'maxLength', 'maximum', 'metadata', 'minLength', 'minimum', 'new\\s+instructions?:', 'number', 'object', 'priority', 'properties', 'query', 'required', 'safe', 'string', 'system\\s*:\\s*', 'type', 'valid', 'you\\s+are\\s+now\\s+a']

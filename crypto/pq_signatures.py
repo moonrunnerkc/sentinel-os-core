@@ -20,6 +20,16 @@ class Algorithm(Enum):
     """supported signature algorithms."""
     ED25519 = "ed25519"
     DILITHIUM3 = "dilithium3"
+    HYBRID_ED25519_DILITHIUM3 = "hybrid_ed25519_dilithium3"
+
+
+class PQUnavailableError(ImportError):
+    """
+    raised when post-quantum crypto is requested but liboqs is not installed.
+
+    this is NOT a silent fallback - the caller must handle this explicitly.
+    """
+    pass
 
 
 def _liboqs_available() -> bool:
@@ -31,29 +41,51 @@ def _liboqs_available() -> bool:
         return False
 
 
+def _require_liboqs(algorithm: Algorithm) -> None:
+    """raise PQUnavailableError if algorithm requires liboqs and it's missing."""
+    if algorithm in (Algorithm.DILITHIUM3, Algorithm.HYBRID_ED25519_DILITHIUM3):
+        if not _liboqs_available():
+            raise PQUnavailableError(
+                f"{algorithm.value} requires liboqs-python. "
+                "Install with: pip install liboqs-python (requires liboqs C library). "
+                "No silent fallback to Ed25519 is permitted."
+            )
+
+
 @dataclass
 class KeyPair:
     """
     signature key pair.
 
     algorithm is explicit - no silent fallback between algorithms.
+
+    for hybrid mode, both ed25519 and dilithium3 keys are stored.
     """
     public_key: bytes
     private_key: bytes
     algorithm: Algorithm
     created_at: float
     key_id: str
+    # hybrid mode keys (only populated for HYBRID_ED25519_DILITHIUM3)
+    ed25519_public: bytes | None = None
+    ed25519_private: bytes | None = None
+    dilithium_public: bytes | None = None
+    dilithium_private: bytes | None = None
 
     def public_key_hex(self) -> str:
         return self.public_key.hex()
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "public_key": self.public_key_hex(),
             "algorithm": self.algorithm.value,
             "created_at": self.created_at,
             "key_id": self.key_id,
         }
+        if self.algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+            d["ed25519_public"] = self.ed25519_public.hex() if self.ed25519_public else None
+            d["dilithium_public"] = self.dilithium_public.hex() if self.dilithium_public else None
+        return d
 
 
 def generate_keypair(
@@ -63,18 +95,55 @@ def generate_keypair(
     """
     generate a key pair with explicit algorithm selection.
 
-    raises ImportError if requested algorithm requires unavailable library.
+    raises PQUnavailableError if requested algorithm requires unavailable library.
+    never silently falls back to a different algorithm.
     """
+    _require_liboqs(algorithm)
+
     timestamp = time.time()
     kid = key_id or f"key_{int(timestamp * 1000)}"
 
-    if algorithm == Algorithm.DILITHIUM3:
-        if not _liboqs_available():
-            raise ImportError(
-                "Dilithium3 requires liboqs-python. "
-                "Install with: pip install liboqs-python"
-            )
+    if algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+        # generate both key types
+        import oqs
 
+        # ed25519
+        ed_private = ed25519.Ed25519PrivateKey.generate()
+        ed_public = ed_private.public_key()
+        ed_priv_bytes = ed_private.private_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        ed_pub_bytes = ed_public.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+
+        # dilithium3
+        dil_signer = oqs.Signature("Dilithium3")
+        dil_pub_bytes = dil_signer.generate_keypair()
+        dil_priv_bytes = dil_signer.export_secret_key()
+
+        # combined public key is concatenation (ed25519 || dilithium)
+        combined_public = ed_pub_bytes + dil_pub_bytes
+        combined_private = ed_priv_bytes + dil_priv_bytes
+
+        logger.info(f"generated hybrid Ed25519+Dilithium3 keypair: {kid}")
+
+        return KeyPair(
+            public_key=combined_public,
+            private_key=combined_private,
+            algorithm=Algorithm.HYBRID_ED25519_DILITHIUM3,
+            created_at=timestamp,
+            key_id=kid,
+            ed25519_public=ed_pub_bytes,
+            ed25519_private=ed_priv_bytes,
+            dilithium_public=dil_pub_bytes,
+            dilithium_private=dil_priv_bytes,
+        )
+
+    elif algorithm == Algorithm.DILITHIUM3:
         import oqs
         signer = oqs.Signature("Dilithium3")
         public_key = signer.generate_keypair()
@@ -121,13 +190,23 @@ def generate_keypair(
 class Signer:
     """
     message signer with explicit algorithm.
+
+    for hybrid mode, signs with BOTH Ed25519 and Dilithium3.
     """
 
     def __init__(self, keypair: KeyPair):
         self._keypair = keypair
         self._algorithm = keypair.algorithm
 
-        if self._algorithm == Algorithm.DILITHIUM3:
+        _require_liboqs(self._algorithm)
+
+        if self._algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+            import oqs
+            self._ed_private = ed25519.Ed25519PrivateKey.from_private_bytes(
+                keypair.ed25519_private
+            )
+            self._dil_signer = oqs.Signature("Dilithium3", keypair.dilithium_private)
+        elif self._algorithm == Algorithm.DILITHIUM3:
             import oqs
             self._signer = oqs.Signature("Dilithium3", keypair.private_key)
         elif self._algorithm == Algorithm.ED25519:
@@ -146,8 +225,18 @@ class Signer:
         return self._keypair.key_id
 
     def sign(self, message: bytes) -> bytes:
-        """sign a message."""
-        if self._algorithm == Algorithm.DILITHIUM3:
+        """
+        sign a message.
+
+        for hybrid mode, returns concatenated signatures (ed25519 || dilithium).
+        """
+        if self._algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+            ed_sig = self._ed_private.sign(message)
+            dil_sig = self._dil_signer.sign(message)
+            # length-prefixed concatenation for unambiguous parsing
+            ed_len = len(ed_sig).to_bytes(4, 'big')
+            return ed_len + ed_sig + dil_sig
+        elif self._algorithm == Algorithm.DILITHIUM3:
             return self._signer.sign(message)
         else:
             return self._private_key.sign(message)
@@ -170,15 +259,31 @@ class Signer:
 class Verifier:
     """
     signature verifier - uses only public key.
+
+    for hybrid mode, verifies BOTH signatures. fails if EITHER is invalid.
     """
 
-    def __init__(self, public_key: bytes, algorithm: Algorithm):
+    def __init__(
+        self,
+        public_key: bytes,
+        algorithm: Algorithm,
+        ed25519_public: bytes | None = None,
+        dilithium_public: bytes | None = None,
+    ):
         self._public_key = public_key
         self._algorithm = algorithm
+        self._ed25519_public = ed25519_public
+        self._dilithium_public = dilithium_public
 
-        if algorithm == Algorithm.DILITHIUM3:
-            if not _liboqs_available():
-                raise ImportError("Dilithium3 verification requires liboqs-python")
+        _require_liboqs(algorithm)
+
+        if algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+            if ed25519_public is None or dilithium_public is None:
+                raise ValueError("hybrid mode requires both ed25519_public and dilithium_public")
+            import oqs
+            self._ed_public = ed25519.Ed25519PublicKey.from_public_bytes(ed25519_public)
+            self._dil_verifier = oqs.Signature("Dilithium3")
+        elif algorithm == Algorithm.DILITHIUM3:
             import oqs
             self._verifier = oqs.Signature("Dilithium3")
         elif algorithm == Algorithm.ED25519:
@@ -191,9 +296,37 @@ class Verifier:
         return self._algorithm
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        """verify a signature."""
+        """
+        verify a signature.
+
+        for hybrid mode, verifies BOTH signatures. returns False if either fails.
+        """
         try:
-            if self._algorithm == Algorithm.DILITHIUM3:
+            if self._algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3:
+                # parse length-prefixed signature
+                if len(signature) < 4:
+                    return False
+                ed_len = int.from_bytes(signature[:4], 'big')
+                if len(signature) < 4 + ed_len:
+                    return False
+                ed_sig = signature[4:4 + ed_len]
+                dil_sig = signature[4 + ed_len:]
+
+                # verify ed25519
+                try:
+                    self._ed_public.verify(ed_sig, message)
+                except Exception:
+                    logger.debug("hybrid verification: ed25519 signature invalid")
+                    return False
+
+                # verify dilithium - BOTH must pass
+                if not self._dil_verifier.verify(message, dil_sig, self._dilithium_public):
+                    logger.debug("hybrid verification: dilithium signature invalid")
+                    return False
+
+                return True
+
+            elif self._algorithm == Algorithm.DILITHIUM3:
                 return self._verifier.verify(message, signature, self._public_key)
             else:
                 self._ed_public.verify(signature, message)
@@ -229,7 +362,12 @@ class Verifier:
     @classmethod
     def from_keypair(cls, keypair: KeyPair) -> "Verifier":
         """create verifier from keypair (uses public key only)."""
-        return cls(keypair.public_key, keypair.algorithm)
+        return cls(
+            keypair.public_key,
+            keypair.algorithm,
+            ed25519_public=keypair.ed25519_public,
+            dilithium_public=keypair.dilithium_public,
+        )
 
 
 class SignedLogChain:
@@ -306,17 +444,46 @@ def get_recommended_algorithm(pq_required: bool) -> Algorithm:
     """
     get recommended algorithm based on requirements.
 
-    if pq_required=True and liboqs missing, raises ImportError.
+    if pq_required=True and liboqs missing, raises PQUnavailableError.
     """
     if pq_required:
         if not _liboqs_available():
-            raise ImportError(
+            raise PQUnavailableError(
                 "Post-quantum crypto required but liboqs-python not installed. "
                 "Either install liboqs-python or set pq_crypto=false in config."
             )
         return Algorithm.DILITHIUM3
     else:
         return Algorithm.ED25519
+
+
+def algorithm_from_config(config_value: str) -> Algorithm:
+    """
+    parse algorithm from config string value.
+
+    raises ValueError for invalid values.
+    raises PQUnavailableError if PQ algorithm selected but unavailable.
+    """
+    value = config_value.lower().strip()
+
+    if value == "ed25519":
+        return Algorithm.ED25519
+    elif value == "dilithium3":
+        _require_liboqs(Algorithm.DILITHIUM3)
+        return Algorithm.DILITHIUM3
+    elif value in ("hybrid", "hybrid_ed25519_dilithium3"):
+        _require_liboqs(Algorithm.HYBRID_ED25519_DILITHIUM3)
+        return Algorithm.HYBRID_ED25519_DILITHIUM3
+    else:
+        raise ValueError(
+            f"invalid signature_algorithm: {config_value}. "
+            "valid values: ed25519, dilithium3, hybrid"
+        )
+
+
+def liboqs_available() -> bool:
+    """public API to check liboqs availability."""
+    return _liboqs_available()
 
 
 # backwards compatibility aliases (deprecated)

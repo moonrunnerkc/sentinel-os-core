@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/memory/episodic_replay.py
+# hypothesis_version: 6.151.3
+
+[10000, 'LRU capacity limit', 'episode_id', 'episodes', 'evicted_at', 'eviction_log', 'id', 'r', 'reason', 'recorded_at', 'w']

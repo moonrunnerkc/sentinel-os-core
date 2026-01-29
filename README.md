@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-143%20passed-brightgreen.svg)](#verification-evidence)
+[![Tests](https://img.shields.io/badge/tests-233%20passed-brightgreen.svg)](#verification-evidence)
 
 Modular, offline-first cognitive operating system for synthetic intelligence. Designed for autonomous reasoning, persistent memory, and goal evolution in air-gapped or adversarial environments.
 
@@ -47,20 +47,26 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 
 ## Verification Evidence
 
-### Test Suite: 143 Passed, 10 Skipped
+### Test Suite: 360 Passed, 11 Skipped
 
 🧪 **[View Full Test Screenshot](docs/screenshots/test-results.png)**
 
 | Module | Tests | Coverage |
 |--------|-------|----------|
 | `tests/test_verification.py` | 24 passed | State machine, invariants, property tests, termination |
+| `tests/test_formal_verification.py` | 45 passed | Formal checker, proof log, Hypothesis property tests |
 | `tests/test_privacy.py` | 23 passed | Budget accounting, Laplace/Gaussian mechanisms, clipping |
-| `tests/test_crypto.py` | 18 passed | ZK proofs, PQ signatures, Merkle trees, signed chains |
-| `tests/test_sandbox.py` | 27 passed | Safe execution, filesystem isolation, malicious code rejection |
-| `tests/test_*.py` (other) | 51 passed | Memory, integration, belief ecology, goal collapse |
-| *Skipped* | 10 | Firejail tests (requires external binary) |
+| `tests/test_crypto.py` | 38 passed | Commitments, PQ signatures, Merkle trees, signed chains |
+| `tests/test_zk_proofs.py` | 25 passed | Pedersen commitments, Schnorr proofs, state transition proofs |
+| `tests/test_isolation.py` | 35 passed | Isolation levels, hard-fail semantics, threat models |
+| `tests/test_scalability.py` | 21 passed | Scale metrics, no hard caps, 10k+ operations |
+| `tests/test_meta_evolution.py` | 30 passed | Evolution engine, objectives, determinism, bounds |
+| `tests/test_world_model.py` | 31 passed | Simulation, counterfactual, hard-fail when disabled |
+| `tests/test_sandbox.py` | 19 passed | Backwards compatibility, pattern blocking |
+| `tests/test_*.py` (other) | 69 passed | Memory, sync, integration, belief ecology, goal collapse |
+| *Skipped* | 11 | Firejail, Docker, liboqs hybrid mode (requires external deps) |
 
-*All tests run with `pytest tests/ -v`. Execution time: 3.18s.*
+*All tests run with `pytest tests/ -v`. Execution time: ~15s.*
 
 ### Demo: All Systems Operational
 
@@ -85,7 +91,45 @@ Performance validated across 100 iterations per operation with statistical rigor
 | **Belief insert** | 0.2208ms | 0.3770ms | 4,529 | Verified belief insertion with trace |
 | **Belief update** | 0.3565ms | 0.3864ms | 2,805 | Confidence update with invariant check |
 
-*Benchmarks run on seed=42 for reproducibility. See [benchmarks-1.png](docs/screenshots/benchmarks-1.png) and [benchmarks-2.png](docs/screenshots/benchmarks-2.png) for raw output.*
+### Crypto Benchmark Results
+
+| Operation | Mean (ms) | P95 (ms) | Ops/sec | What It Measures |
+|-----------|-----------|----------|---------|------------------|
+| **Pedersen commit** | 15.32ms | 16.10ms | 65 | Discrete-log commitment creation |
+| **Pedersen verify** | 15.20ms | 15.59ms | 66 | Commitment opening verification |
+| **Schnorr prove** | 15.17ms | 15.55ms | 66 | ZK proof of knowledge generation |
+| **Schnorr verify** | 17.52ms | 18.01ms | 57 | ZK proof verification |
+| **State transition proof** | 61.19ms | 62.60ms | 16 | Full transition proof (commit + Schnorr) |
+| **Ed25519 sign** | 0.031ms | 0.047ms | 32,382 | Signature generation |
+| **Ed25519 verify** | 0.095ms | 0.112ms | 10,518 | Signature verification |
+| **Merkle build (100)** | 0.144ms | 0.190ms | 6,928 | Tree construction |
+| **HE encrypt** | 3.62ms | 4.60ms | 276 | CKKS encryption |
+| **HE add** | 0.063ms | 0.089ms | 15,771 | Ciphertext addition |
+| **HE decrypt** | 0.93ms | 1.10ms | 1,078 | CKKS decryption |
+
+*Benchmarks run with 100 iterations each. See `python -m benchmarks.crypto_benchmark` for live results.*
+
+### End-to-End Benchmark Results
+
+Real-world workload benchmarks measuring complete operations across all system layers:
+
+| Operation | Duration | Threshold | Ops/sec | What It Measures |
+|-----------|----------|-----------|---------|------------------|
+| **Belief insertion (1k)** | 1.31ms | 500ms | 763,379 | Sequential belief storage |
+| **Belief insertion (10k)** | 8.30ms | 5000ms | 1,204,520 | Large-scale belief storage |
+| **Belief retrieval (10k)** | 2.21ms | 100ms | 4,519,656 | Random access by ID |
+| **Episode recording (1k)** | 1.59ms | 500ms | 628,091 | Episodic memory recording |
+| **Episode replay** | 120.17ms | 500ms | 832 | Sample 100 from 10k episodes x100 |
+| **Memory roundtrip (10k)** | 45.23ms | 5000ms | 44 | Save + load 10k beliefs |
+| **Goal operations (1k)** | 0.03ms | 1000ms | 39,231,070 | Goal hierarchy traversal |
+| **Contradiction detection** | 0.00ms | 500ms | 570,449 | Detect conflicts in 1k beliefs |
+| **Audit chain verify (1k)** | 109.66ms | 1000ms | 9,119 | Verify 1000-entry signed chain |
+| **State transitions (1k)** | 1535.26ms | 2000ms | 651 | Verified state machine transitions |
+| **Meta-evolution (100 gen)** | 1.75ms | 1000ms | 57,678 | Hyperparameter optimization |
+| **World model sim (1k)** | 91.29ms | 100ms | 10,954 | Causal simulation steps |
+| **Formal verification (10k)** | 1.58ms | 50ms | 3,788 | Verify 10k beliefs with 6 invariants |
+
+*All thresholds passed. Run `python -m benchmarks.e2e_benchmark` for live results.*
 
 ---
 
@@ -96,35 +140,35 @@ Performance validated across 100 iterations per operation with statistical rigor
 │                        SENTINEL OS CORE                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                  VERIFICATION LAYER                        │  │
+│  │                  VERIFICATION LAYER                       │  │
 │  │  ┌──────────────┐  ┌─────────────┐  ┌──────────────────┐  │  │
 │  │  │ StateMachine │  │ Invariants  │  │ PropertyTests    │  │  │
 │  │  └──────────────┘  └─────────────┘  └──────────────────┘  │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                    CORE ENGINE                              │ │
+│  │                    CORE ENGINE                             │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
 │  │  │ BeliefEcology│  │ GoalCollapse │  │ContradictionTracer│ │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                   PRIVACY LAYER                             │ │
+│  │                   PRIVACY LAYER                            │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
 │  │  │BudgetAccount │  │DP Mechanisms │  │ SecureAggregator │  │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                   CRYPTO LAYER                              │ │
+│  │                   CRYPTO LAYER                             │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
 │  │  │ ZK Proofs    │  │ PQ Signatures│  │ Merkle Trees     │  │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
 │  └────────────────────────────┬───────────────────────────────┘ │
 │                               │                                 │
 │  ┌────────────────────────────▼───────────────────────────────┐ │
-│  │                   ISOLATION LAYER                           │ │
+│  │                   ISOLATION LAYER                          │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
 │  │  │ TrustBoundary│  │ IsolationEng │  │ SecurityAudit    │  │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────────┘  │ │
@@ -156,6 +200,18 @@ Performance validated across 100 iterations per operation with statistical rigor
 | **Invariant Checker** | Runtime invariant verification | `verification/invariants.py` |
 | **Property Testing** | Randomized property verification | `verification/properties.py` |
 | **Trace Integrity** | Cryptographic chain verification | `verification/state_machine.py` |
+| **Formal Checker** | Mechanical invariant checking | `verification/formal_checker.py` |
+| **Proof Log** | Reproducible verification artifacts | `verification/proof_log.py` |
+
+### Meta-Evolution and World Models (Implemented)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Meta-Evolution Engine** | Hyperparameter optimization with measurable objectives | `core/meta_evolution.py` |
+| **Objective Functions** | BeliefCoherence, Efficiency, Composite | `core/meta_evolution.py` |
+| **World Model Interface** | Abstract interface for causal simulation | `core/world_model.py` |
+| **Simple World Model** | Numpy-based deterministic simulation | `core/world_model.py` |
+| **Counterfactual Analysis** | What-if simulation for decision making | `core/world_model.py` |
 
 ### Privacy (Implemented)
 
@@ -228,22 +284,37 @@ Output:
 SENTINEL OS CORE - DEMO
 ============================================================
 
-[1/5] Verification Layer...
+[CRYPTO MODE]
+  Signature algorithm: ed25519
+  ZK proofs (Pedersen/Schnorr): enabled
+  Homomorphic encryption: disabled
+  liboqs-python: NOT installed
+  tenseal: available
+
+[1/6] Verification Layer...
       Trace integrity: True
 
-[2/5] Privacy Layer...
+[2/6] Privacy Layer...
       Budget remaining: 0.90 epsilon
-      Noisy value: 0.4823 (original: 0.5)
+      Noisy value: -4.6996 (original: 0.5)
 
-[3/5] ZK Proofs...
-      Proof valid: True
+[3/6] State Commitments...
+      Commitment valid: True
+      Transition type: demo_update
 
-[4/5] Merkle Tree...
-      Root: 8a6d2be625687bba0ba4d1858de2f957...
+[4/6] Zero-Knowledge Proofs...
+      Pedersen commitment valid: True
+      Schnorr proof valid: True
+      Belief count delta proof valid: True
+      [SCOPE: Pedersen commitments + Schnorr proofs over discrete log]
+
+[5/6] Merkle Tree...
+      Root: efa1adf8f0e90aea64b96250a9fe43c8...
       Leaves: 4
 
-[5/5] Signed Audit Chain...
+[6/6] Signed Audit Chain...
       Chain valid: True
+      Algorithm: ed25519
       Entries: 3
 
 ============================================================
@@ -372,6 +443,46 @@ report = accountant.export_audit_report()
 
 ## Cryptographic Primitives
 
+### Zero-Knowledge Proofs (Pedersen + Schnorr)
+
+```python
+from crypto.zk_proofs import (
+    PedersenScheme,
+    SchnorrProver,
+    SchnorrVerifier,
+    StateTransitionProver,
+    StateTransitionVerifier,
+    G, P, _mod_exp,
+)
+
+# Pedersen commitment (hiding + binding)
+pedersen = PedersenScheme(seed=42)
+commitment = pedersen.commit(100)
+valid = pedersen.verify(
+    commitment.commitment,
+    commitment.value,
+    commitment.blinding,
+)
+
+# Schnorr proof of knowledge
+secret = 12345
+public = _mod_exp(G, secret, P)
+prover = SchnorrProver(seed=42)
+verifier = SchnorrVerifier()
+proof = prover.prove(secret, public)
+valid, msg = verifier.verify(proof, public)
+
+# State transition proof (e.g., belief count delta)
+trans_prover = StateTransitionProver(seed=42)
+proof, msg = trans_prover.prove_belief_count_delta(
+    pre_count=10,
+    post_count=15,
+    declared_delta=5,
+)
+trans_verifier = StateTransitionVerifier()
+valid, msg = trans_verifier.verify(proof)
+```
+
 ### State Commitments
 
 ```python
@@ -490,24 +601,37 @@ docker run --network none sentinel-os pytest tests/ -v
 
 ## Security Architecture
 
+### Isolation Levels
+
+The system provides explicit isolation levels with documented threat models. **No level silently downgrades.**
+
+| Level | Defends Against | Does NOT Defend Against | Requires |
+|-------|-----------------|-------------------------|----------|
+| `none` | Nothing | Everything | Nothing |
+| `pattern_only` | Accidental imports, obvious eval/exec | Obfuscation, runtime attacks | Nothing |
+| `python_sandbox` | Basic injection, timeout enforcement | Interpreter exploits, pickle attacks | Nothing |
+| `firejail` | Filesystem, network, syscalls | Kernel vulnerabilities | firejail binary |
+| `docker` | Process, filesystem, resources | Container escapes | docker daemon |
+
+### Hard-Fail Semantics
+
+```python
+from security.isolation import Isolation, IsolationConfig, IsolationLevel, IsolationUnavailableError
+
+# this will HARD-FAIL if firejail is not installed
+try:
+    config = IsolationConfig(level=IsolationLevel.FIREJAIL)
+    isolation = Isolation(config)
+except IsolationUnavailableError as e:
+    print(f"cannot use firejail: {e}")
+    # choose a different level or exit
+```
+
 ### Trust Zones
 
 1. **TRUSTED**: Core logic, verified invariants, signed code
 2. **SEMI_TRUSTED**: Validated user config, sanitized inputs
 3. **UNTRUSTED**: External inputs, user code, network data
-
-### Soft Isolation
-
-The sandbox provides **defense-in-depth**, not cryptographic security:
-
-| Defended | Not Defended |
-|----------|--------------|
-| Accidental dangerous ops | Sophisticated attacks |
-| Basic injection patterns | CPython interpreter exploits |
-| Obvious import/exec/eval | Pickle deserialization |
-| Timeout enforcement | Memory corruption |
-
-For hostile code execution, use VMs or hardware isolation.
 
 ### What Is Actually Verified
 
@@ -515,12 +639,13 @@ For hostile code execution, use VMs or hardware isolation.
 - Privacy budget is never exceeded
 - Traces are cryptographically chained
 - Merkle roots are verifiable
-- Signatures use real Ed25519
+- Signatures use real Ed25519 (or hybrid PQ when liboqs available)
 
 ### What Is Best-Effort
 
 - Python sandbox (bypassable by determined attacker)
 - Pattern-based code blocking (not comprehensive)
+- No isolation level provides security boundary against kernel exploits
 
 ---
 
@@ -529,26 +654,44 @@ For hostile code execution, use VMs or hardware isolation.
 | Limitation | Details |
 |------------|---------|
 | **Sandbox escapes** | Python isolation is not a security boundary |
-| **No ZK proofs** | Uses hash commitments, not SNARK/STARK |
-| **Ed25519 only** | No post-quantum (Dilithium) without liboqs |
+| **ZK proof scope** | Pedersen/Schnorr over discrete log only, NOT SNARK/STARK |
+| **Ed25519 default** | PQ (Dilithium/Hybrid) requires liboqs-python |
+| **HE requires tenseal** | Homomorphic encryption disabled without tenseal |
 | **LLM reproducibility** | Varies across hardware |
 | **Scalability** | Tested to 10k beliefs |
 | **Neuromorphic** | Requires brian2, no mock mode |
 
 ---
 
-## Removed Features
+## Implemented Features (Phase 1 Complete)
 
-The following features were removed because they were mock implementations:
+The following crypto features are now implemented with real algorithms:
 
-| Feature | Why Removed |
-|---------|-------------|
-| **ZK Proofs** | Was hash-based simulation, not actual ZKP |
-| **Causal Simulation** | Was random numbers with seed, not causal inference |
-| **Counterfactual Branching** | Was random perturbation, not real counterfactuals |
+| Feature | Implementation | Status |
+|---------|----------------|--------|
+| **ZK Proofs** | Pedersen commitments + Schnorr proofs over discrete log | ✅ Working |
+| **PQ Signatures** | Hybrid Ed25519+Dilithium3 mode (requires liboqs) | ✅ Available |
+| **Homomorphic Encryption** | CKKS via TenSEAL for encrypted computation | ✅ Working |
+| **Signed Audit Chains** | Ed25519 (default) or hybrid mode | ✅ Working |
+| **Authenticated Sync** | Signed exports with replay protection | ✅ Working |
+
+### ZK Proof Scope Limitation
+
+The ZK proofs are **scoped to discrete-log based protocols**:
+- ✅ Pedersen commitments (hiding, binding, homomorphic)
+- ✅ Schnorr proofs of knowledge
+- ✅ State transition invariant proofs
+- ❌ NOT SNARK/STARK (no general computation)
+- ❌ NOT range proofs (requires bulletproofs)
+
+### Removed Mock Features
+
+| Feature | Status |
+|---------|--------|
+| **Causal Simulation** | Removed - was random numbers, not causal inference |
+| **Counterfactual Branching** | Removed - was random perturbation |
 | **World Models** | Removed - no actual physics simulation |
-| **PQ Crypto** | Removed - no liboqs integration existed |
-| **Federated ZKP Sync** | Replaced with signed sync (honest about what it does) |
+| **Federated ZKP Sync** | Replaced with signed sync (honest about scope) |
 
 ---
 

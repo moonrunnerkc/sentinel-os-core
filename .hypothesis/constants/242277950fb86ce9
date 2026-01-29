@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/core/world_model.py
+# hypothesis_version: 6.151.3
+
+[0.0, 0.005, 0.01, 0.05, 0.1, 0.2, 1.0, 1000, ',', ':', 'SimulationState', 'actions_count', 'beliefs', 'consume_resource', 'decay_rate', 'determinism verified', 'deterministic', 'duration_ms', 'enabled', 'final_digest', 'final_state', 'goals', 'initial_digest', 'initial_state', 'noise_scale', 'none', 'regeneration_rate', 'resources', 'reward', 'seed', 'simple', 'simulation_id', 'step', 'steps', 'timestamp', 'type', 'update_belief', 'update_goal', 'world_model']

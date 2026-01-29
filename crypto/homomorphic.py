@@ -20,10 +20,33 @@ def _check_tenseal():
         return False
 
 
-if not _check_tenseal():
-    # log warning at import time, but don't fail yet
-    # failure happens when HomomorphicEngine is instantiated
-    logger.warning("TenSEAL not installed - HE features will be unavailable")
+def tenseal_available() -> bool:
+    """public API to check TenSEAL availability."""
+    return _check_tenseal()
+
+
+def validate_he_config(config: dict) -> None:
+    """
+    validate HE configuration at startup.
+
+    raises HEUnavailableError if HE is enabled but TenSEAL is missing.
+    this is called at startup to fail fast, not silently.
+    """
+    features = config.get("features", {})
+    he_enabled = features.get("homomorphic_encryption", False)
+
+    if he_enabled and not _check_tenseal():
+        raise HEUnavailableError(
+            "FATAL: homomorphic_encryption enabled in config but tenseal not installed. "
+            "Either install tenseal (pip install tenseal) or set "
+            "features.homomorphic_encryption: false in config/system_config.yaml. "
+            "No silent fallback is permitted."
+        )
+
+    if he_enabled:
+        logger.info("homomorphic encryption: enabled (tenseal available)")
+    else:
+        logger.debug("homomorphic encryption: disabled in config")
 
 
 @dataclass

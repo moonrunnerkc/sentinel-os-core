@@ -7,13 +7,25 @@ llm:
   min_vram_gb: 4.0
 
 performance:
-  max_beliefs: 10000
-  max_episodes: 10000
+  # null = no limit, integer = soft limit with warning
+  max_beliefs: null
+  max_episodes: null
+  soft_limit_warning_pct: 80
+  page_size: 1000
   cache_size: 1000
+  enable_compression: false
 
 features:
   # neuromorphic mode requires brian2 - will fail if unavailable
   neuromorphic_mode: false
+  # zk proofs - pedersen commitments and schnorr proofs
+  zk_proofs: true
+  # homomorphic encryption requires tenseal - hard fail if unavailable
+  homomorphic_encryption: false
+
+# crypto settings
+crypto:
+  commitment_seed: 42
 
 # verification settings
 verification:
@@ -32,5 +44,26 @@ isolation:
   level: python
   timeout_seconds: 30
   use_firejail: false
-  timeout_seconds: 30
   network_enabled: false
+
+# meta-evolution settings
+meta_evolution:
+  enabled: false
+  max_generations: 100
+  convergence_threshold: 0.001
+  seed: 42
+  mutation_scale: 0.1
+  bounds:
+    epsilon: [0.01, 1.0]
+    decay_rate: [0.001, 0.1]
+    confidence_threshold: [0.1, 0.9]
+    learning_rate: [0.001, 0.1]
+
+# world model settings
+world_model:
+  enabled: false
+  type: simple
+  decay_rate: 0.01
+  regeneration_rate: 0.005
+  noise_scale: 0.01
+  seed: 42

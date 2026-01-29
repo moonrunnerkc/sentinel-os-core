@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/memory/scale_metrics.py
+# hypothesis_version: 6.151.3
+
+[0.0, 80.0, -1000, 100, 500, 1000, 1024, '*', 'belief_count', 'episode_count', 'goal_count', 'index_size_bytes', 'load_time_ms', 'memory', 'memory_used_bytes', 'query_time_ms', 'storage_bytes', 'timestamp']

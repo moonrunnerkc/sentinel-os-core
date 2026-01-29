@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/memory/persistent_memory.py
+# hypothesis_version: 6.151.3
+
+[0.5, 8192, 'HE not enabled', 'belief_id', 'ciphertext', 'confidence', 'id', 'metadata', 'r', 'success', 'vector', 'w']

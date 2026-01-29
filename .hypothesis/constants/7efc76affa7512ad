@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/verification/proof_log.py
+# hypothesis_version: 6.151.3
+
+[',', '1.0.0', ':', 'ProofLog', '_', 'avg_duration_ms', 'duration_ms', 'empty log', 'entries', 'entry', 'failed', 'final_hash', 'genesis', 'invariant_name', 'message', 'passed', 'prev', 'result', 'seed', 'sequence', 'start_time', 'state_digest', 'timestamp', 'total_checks', 'total_duration_ms', 'total_entries', 'version', 'w']

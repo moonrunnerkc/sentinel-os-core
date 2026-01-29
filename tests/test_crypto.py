@@ -20,6 +20,9 @@ from crypto.pq_signatures import (
     Verifier,
     SignedLogChain,
     Algorithm,
+    PQUnavailableError,
+    algorithm_from_config,
+    liboqs_available,
 )
 from crypto.merkle import (
     MerkleTree,
@@ -277,3 +280,124 @@ class TestIncrementalMerkleTree:
         # roots may differ slightly due to padding strategies, but both should be valid
         assert len(inc_tree.root) == 64
         assert len(batch_tree.root) == 64
+
+
+class TestPQSignaturesAdvanced:
+    """tests for PQ signature advanced features."""
+
+    def test_algorithm_enum_has_hybrid(self):
+        assert Algorithm.HYBRID_ED25519_DILITHIUM3.value == "hybrid_ed25519_dilithium3"
+
+    def test_pq_unavailable_error_exists(self):
+        assert issubclass(PQUnavailableError, ImportError)
+
+    def test_algorithm_from_config_ed25519(self):
+        algo = algorithm_from_config("ed25519")
+        assert algo == Algorithm.ED25519
+
+    def test_algorithm_from_config_invalid(self):
+        with pytest.raises(ValueError, match="invalid signature_algorithm"):
+            algorithm_from_config("invalid_algo")
+
+    def test_liboqs_available_returns_bool(self):
+        result = liboqs_available()
+        assert isinstance(result, bool)
+
+    @pytest.mark.skipif(
+        not liboqs_available(),
+        reason="liboqs not installed"
+    )
+    def test_hybrid_keygen_with_liboqs(self):
+        keypair = generate_keypair(Algorithm.HYBRID_ED25519_DILITHIUM3)
+
+        assert keypair.algorithm == Algorithm.HYBRID_ED25519_DILITHIUM3
+        assert keypair.ed25519_public is not None
+        assert keypair.ed25519_private is not None
+        assert keypair.dilithium_public is not None
+        assert keypair.dilithium_private is not None
+
+    @pytest.mark.skipif(
+        not liboqs_available(),
+        reason="liboqs not installed"
+    )
+    def test_hybrid_sign_and_verify_with_liboqs(self):
+        keypair = generate_keypair(Algorithm.HYBRID_ED25519_DILITHIUM3)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
+
+        message = b"hybrid test message"
+        signature = signer.sign(message)
+
+        assert verifier.verify(message, signature)
+
+    @pytest.mark.skipif(
+        not liboqs_available(),
+        reason="liboqs not installed"
+    )
+    def test_hybrid_partial_signature_fails(self):
+        """test that if either signature is invalid, verification fails."""
+        keypair = generate_keypair(Algorithm.HYBRID_ED25519_DILITHIUM3)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
+
+        message = b"hybrid test message"
+        signature = signer.sign(message)
+
+        # corrupt the signature
+        corrupted = signature[:10] + b'\x00' + signature[11:]
+        assert not verifier.verify(message, corrupted)
+
+    @pytest.mark.skipif(
+        liboqs_available(),
+        reason="test only runs when liboqs is NOT installed"
+    )
+    def test_dilithium_raises_pq_unavailable(self):
+        with pytest.raises(PQUnavailableError):
+            generate_keypair(Algorithm.DILITHIUM3)
+
+    @pytest.mark.skipif(
+        liboqs_available(),
+        reason="test only runs when liboqs is NOT installed"
+    )
+    def test_hybrid_raises_pq_unavailable(self):
+        with pytest.raises(PQUnavailableError):
+            generate_keypair(Algorithm.HYBRID_ED25519_DILITHIUM3)
+
+    @pytest.mark.skipif(
+        liboqs_available(),
+        reason="test only runs when liboqs is NOT installed"
+    )
+    def test_algorithm_from_config_dilithium_raises(self):
+        with pytest.raises(PQUnavailableError):
+            algorithm_from_config("dilithium3")
+
+    @pytest.mark.skipif(
+        liboqs_available(),
+        reason="test only runs when liboqs is NOT installed"
+    )
+    def test_algorithm_from_config_hybrid_raises(self):
+        with pytest.raises(PQUnavailableError):
+            algorithm_from_config("hybrid")
+
+
+class TestHomomorphicConfig:
+    """tests for HE config validation."""
+
+    def test_validate_he_config_disabled(self):
+        from crypto.homomorphic import validate_he_config
+
+        config = {"features": {"homomorphic_encryption": False}}
+        # should not raise
+        validate_he_config(config)
+
+    def test_validate_he_config_enabled_requires_tenseal(self):
+        from crypto.homomorphic import validate_he_config, tenseal_available, HEUnavailableError
+
+        config = {"features": {"homomorphic_encryption": True}}
+
+        if tenseal_available():
+            # should not raise
+            validate_he_config(config)
+        else:
+            with pytest.raises(HEUnavailableError, match="FATAL"):
+                validate_he_config(config)

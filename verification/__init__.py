@@ -16,6 +16,19 @@ from verification.properties import (
     PropertyTester,
     property_test,
 )
+from verification.formal_checker import (
+    FormalChecker,
+    Invariant,
+    InvariantViolation as FormalInvariantViolation,
+    VerificationReport,
+    create_standard_checker,
+)
+from verification.proof_log import (
+    ProofLog,
+    ProofLogger,
+    ProofEntry,
+    run_formal_verification,
+)
 
 __all__ = [
     "BeliefState",
@@ -27,4 +40,13 @@ __all__ = [
     "check_all_invariants",
     "PropertyTester",
     "property_test",
+    "FormalChecker",
+    "Invariant",
+    "FormalInvariantViolation",
+    "VerificationReport",
+    "create_standard_checker",
+    "ProofLog",
+    "ProofLogger",
+    "ProofEntry",
+    "run_formal_verification",
 ]

@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/interfaces/authenticated_sync.py
+# hypothesis_version: 6.151.3
+
+[10000, 86400, ',', ':', 'SignedExport', 'algorithm', 'beliefs', 'export_timestamp', 'metadata', 'nonce', 'payload', 'signature', 'signer_key_id', 'timestamp']

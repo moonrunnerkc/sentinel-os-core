@@ -1,0 +1,4 @@
+# file: /home/brad/sentinel-os-core/core/contradiction_tracer.py
+# hypothesis_version: 6.151.3
+
+[0.5, 100, 'assumption', 'belief not found', 'calculation', 'confidence', 'content', 'default', 'id', 'inference', 'loser', 'measurement', 'observation', 'recency', 'sensor', 'source', 'strategy', 'timestamp', 'winner']
