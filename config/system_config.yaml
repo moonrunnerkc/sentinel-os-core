@@ -12,10 +12,8 @@ performance:
   cache_size: 1000
 
 features:
-  use_world_models: false
-  use_counterfactual_sim: false
+  # neuromorphic mode requires brian2 - will fail if unavailable
   neuromorphic_mode: false
-  enable_meta_evolution: false
 
 # verification settings
 verification:
@@ -29,14 +27,10 @@ privacy:
   total_delta: 1.0e-5
   composition_mode: basic
 
-# simulation backend preference: auto, scipy, mujoco, pybullet
-simulation:
-  preferred_backend: auto
-  default_dt: 0.01
-
-# isolation level: none, python, firejail, container, microvm
+# isolation settings
 isolation:
   level: python
-  memory_limit_mb: 512
+  timeout_seconds: 30
+  use_firejail: false
   timeout_seconds: 30
   network_enabled: false

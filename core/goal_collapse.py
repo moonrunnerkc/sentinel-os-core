@@ -163,31 +163,3 @@ class GoalCollapse:
         logger.info(f"computed reward for {goal_id}: base={base_reward:.3f}, "
                    f"noisy={noisy_reward:.3f}, epsilon={epsilon}")
         return noisy_reward
-
-    def simulate_counterfactual(
-        self,
-        goal_id: str,
-        n_branches: int = 5
-    ) -> list[dict[str, Any]]:
-        """simulate counterfactual goal branches."""
-        if goal_id not in self._goals:
-            raise KeyError(f"goal not found: {goal_id}")
-
-        goal = self._goals[goal_id]
-        branches = []
-
-        for i in range(n_branches):
-            # each branch explores different priority trajectories
-            np.random.seed(i)
-            branch_priority = goal["priority"] + np.random.uniform(-0.2, 0.2)
-            branch_priority = max(0.0, min(1.0, branch_priority))
-
-            branches.append({
-                "branch_id": i,
-                "original_priority": goal["priority"],
-                "counterfactual_priority": branch_priority,
-                "delta": branch_priority - goal["priority"]
-            })
-
-        logger.info(f"simulated {n_branches} counterfactual branches for {goal_id}")
-        return branches

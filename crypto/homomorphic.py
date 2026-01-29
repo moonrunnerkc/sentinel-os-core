@@ -1,24 +1,29 @@
 # Author: Bradley R. Kinnard
 # homomorphic encryption operations for private belief computation
+# requires TenSEAL - no mock mode, fails explicitly if unavailable
 
 from dataclasses import dataclass
 from typing import Any
 import time
-import json
 
 from utils.helpers import get_logger
 
 logger = get_logger(__name__)
 
 
-# check if TenSEAL is available
-_TENSEAL_AVAILABLE = False
-try:
-    import tenseal as ts
-    _TENSEAL_AVAILABLE = True
-    logger.info("TenSEAL available - HE operations enabled")
-except ImportError:
-    logger.warning("TenSEAL not available - HE operations will use mock mode")
+def _check_tenseal():
+    """verify TenSEAL is available, raise ImportError if not."""
+    try:
+        import tenseal  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+if not _check_tenseal():
+    # log warning at import time, but don't fail yet
+    # failure happens when HomomorphicEngine is instantiated
+    logger.warning("TenSEAL not installed - HE features will be unavailable")
 
 
 @dataclass
@@ -32,9 +37,16 @@ class HEContext:
     created_at: float
 
 
+class HEUnavailableError(ImportError):
+    """raised when HE operations are attempted without TenSEAL."""
+    pass
+
+
 class HomomorphicEngine:
     """
     homomorphic encryption engine for privacy-preserving belief operations.
+
+    requires TenSEAL to be installed. raises HEUnavailableError if not.
 
     supports:
     - encrypted belief confidence storage
@@ -51,23 +63,19 @@ class HomomorphicEngine:
         coeff_mod_bit_sizes: list[int] | None = None,
         scale: float = 2**40,
     ):
+        if not _check_tenseal():
+            raise HEUnavailableError(
+                "Homomorphic encryption requires TenSEAL. "
+                "Install with: pip install tenseal"
+            )
+
+        import tenseal as ts
+        self._ts = ts
+
         self._poly_modulus_degree = poly_modulus_degree
         self._coeff_mod_bit_sizes = coeff_mod_bit_sizes or [60, 40, 40, 60]
         self._scale = scale
-        self._context = None
-        self._secret_key = None
-        self._public_key = None
-        self._relin_keys = None
-        self._galois_keys = None
-        self._mock_mode = not _TENSEAL_AVAILABLE
 
-        if not self._mock_mode:
-            self._init_tenseal_context()
-        else:
-            logger.warning("HE engine running in mock mode")
-
-    def _init_tenseal_context(self) -> None:
-        """initialize TenSEAL CKKS context."""
         self._context = ts.context(
             ts.SCHEME_TYPE.CKKS,
             poly_modulus_degree=self._poly_modulus_degree,
@@ -81,61 +89,29 @@ class HomomorphicEngine:
             f"scale={self._scale}"
         )
 
-    def is_mock_mode(self) -> bool:
-        """check if running in mock mode."""
-        return self._mock_mode
-
     def encrypt_scalar(self, value: float) -> "EncryptedValue":
         """encrypt a single scalar value."""
-        if self._mock_mode:
-            return EncryptedValue(
-                ciphertext=None,
-                mock_value=value,
-                is_mock=True,
-                encrypted_at=time.time(),
-            )
-
-        encrypted = ts.ckks_vector(self._context, [value])
+        encrypted = self._ts.ckks_vector(self._context, [value])
         return EncryptedValue(
             ciphertext=encrypted,
-            mock_value=None,
-            is_mock=False,
             encrypted_at=time.time(),
         )
 
     def encrypt_vector(self, values: list[float]) -> "EncryptedValue":
         """encrypt a vector of values."""
-        if self._mock_mode:
-            return EncryptedValue(
-                ciphertext=None,
-                mock_value=values,
-                is_mock=True,
-                encrypted_at=time.time(),
-            )
-
-        encrypted = ts.ckks_vector(self._context, values)
+        encrypted = self._ts.ckks_vector(self._context, values)
         return EncryptedValue(
             ciphertext=encrypted,
-            mock_value=None,
-            is_mock=False,
             encrypted_at=time.time(),
         )
 
     def decrypt_scalar(self, encrypted: "EncryptedValue") -> float:
         """decrypt to scalar."""
-        if encrypted.is_mock:
-            v = encrypted.mock_value
-            return v[0] if isinstance(v, list) else v
-
         result = encrypted.ciphertext.decrypt()
         return result[0]
 
     def decrypt_vector(self, encrypted: "EncryptedValue") -> list[float]:
         """decrypt to vector."""
-        if encrypted.is_mock:
-            v = encrypted.mock_value
-            return v if isinstance(v, list) else [v]
-
         return encrypted.ciphertext.decrypt()
 
     def add(
@@ -144,29 +120,9 @@ class HomomorphicEngine:
         b: "EncryptedValue",
     ) -> "EncryptedValue":
         """homomorphic addition of two encrypted values."""
-        if a.is_mock and b.is_mock:
-            # mock addition
-            if isinstance(a.mock_value, list) and isinstance(b.mock_value, list):
-                result = [x + y for x, y in zip(a.mock_value, b.mock_value)]
-            elif isinstance(a.mock_value, list):
-                result = [x + b.mock_value for x in a.mock_value]
-            elif isinstance(b.mock_value, list):
-                result = [a.mock_value + y for y in b.mock_value]
-            else:
-                result = a.mock_value + b.mock_value
-
-            return EncryptedValue(
-                ciphertext=None,
-                mock_value=result,
-                is_mock=True,
-                encrypted_at=time.time(),
-            )
-
         result = a.ciphertext + b.ciphertext
         return EncryptedValue(
             ciphertext=result,
-            mock_value=None,
-            is_mock=False,
             encrypted_at=time.time(),
         )
 
@@ -176,21 +132,6 @@ class HomomorphicEngine:
         plain: float | list[float],
     ) -> "EncryptedValue":
         """add plaintext to encrypted value."""
-        if encrypted.is_mock:
-            if isinstance(encrypted.mock_value, list) and isinstance(plain, list):
-                result = [x + y for x, y in zip(encrypted.mock_value, plain)]
-            elif isinstance(encrypted.mock_value, list):
-                result = [x + plain for x in encrypted.mock_value]
-            else:
-                result = encrypted.mock_value + plain
-
-            return EncryptedValue(
-                ciphertext=None,
-                mock_value=result,
-                is_mock=True,
-                encrypted_at=time.time(),
-            )
-
         if isinstance(plain, list):
             result = encrypted.ciphertext + plain
         else:
@@ -198,8 +139,6 @@ class HomomorphicEngine:
 
         return EncryptedValue(
             ciphertext=result,
-            mock_value=None,
-            is_mock=False,
             encrypted_at=time.time(),
         )
 
@@ -209,21 +148,6 @@ class HomomorphicEngine:
         plain: float | list[float],
     ) -> "EncryptedValue":
         """multiply encrypted value by plaintext."""
-        if encrypted.is_mock:
-            if isinstance(encrypted.mock_value, list) and isinstance(plain, list):
-                result = [x * y for x, y in zip(encrypted.mock_value, plain)]
-            elif isinstance(encrypted.mock_value, list):
-                result = [x * plain for x in encrypted.mock_value]
-            else:
-                result = encrypted.mock_value * plain
-
-            return EncryptedValue(
-                ciphertext=None,
-                mock_value=result,
-                is_mock=True,
-                encrypted_at=time.time(),
-            )
-
         if isinstance(plain, list):
             result = encrypted.ciphertext * plain
         else:
@@ -231,8 +155,6 @@ class HomomorphicEngine:
 
         return EncryptedValue(
             ciphertext=result,
-            mock_value=None,
-            is_mock=False,
             encrypted_at=time.time(),
         )
 
@@ -254,18 +176,13 @@ class HomomorphicEngine:
 @dataclass
 class EncryptedValue:
     """wrapper for encrypted values."""
-    ciphertext: Any  # ts.CKKSVector or None
-    mock_value: Any
-    is_mock: bool
+    ciphertext: Any  # ts.CKKSVector
     encrypted_at: float
 
     def size_bytes(self) -> int:
-        """estimate size of ciphertext."""
-        if self.is_mock:
-            return 8  # just a float
+        """size of ciphertext in bytes."""
         if self.ciphertext is None:
             return 0
-        # estimate based on poly modulus degree
         return len(self.ciphertext.serialize())
 
 
@@ -340,5 +257,4 @@ class EncryptedBeliefStore:
         return {
             "n_beliefs": len(self._beliefs),
             "total_size_bytes": total_size,
-            "is_mock_mode": self._engine.is_mock_mode(),
         }

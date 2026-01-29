@@ -28,12 +28,9 @@ system_config_schema = {
         },
         "features": {
             "type": "object",
-            "required": ["use_world_models", "neuromorphic_mode"],
+            "required": ["neuromorphic_mode"],
             "properties": {
-                "use_world_models": {"type": "boolean"},
-                "use_counterfactual_sim": {"type": "boolean"},
-                "neuromorphic_mode": {"type": "boolean"},
-                "enable_meta_evolution": {"type": "boolean"}
+                "neuromorphic_mode": {"type": "boolean"}
             }
         }
     }
@@ -41,14 +38,11 @@ system_config_schema = {
 
 security_rules_schema = {
     "type": "object",
-    "required": ["use_firejail", "allowed_paths", "hmac_key_seed", "pq_crypto"],
+    "required": ["use_firejail", "allowed_paths", "hmac_key_seed"],
     "properties": {
         "use_firejail": {"type": "boolean"},
         "allowed_paths": {"type": "array", "items": {"type": "string"}},
         "hmac_key_seed": {"type": "integer"},
-        "seccomp_profile": {"type": "string"},
-        "pq_crypto": {"type": "boolean"},
-        "use_homomorphic_enc": {"type": "boolean"},
-        "enable_federated_sync": {"type": "boolean"}
+        "seccomp_profile": {"type": "string"}
     }
 }

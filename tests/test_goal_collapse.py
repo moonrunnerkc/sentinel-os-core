@@ -163,43 +163,8 @@ class TestDifferentialPrivacy:
         assert 50 < variance < 500
 
 
-class TestCounterfactualBranching:
-    """test counterfactual goal simulation."""
-
-    def test_counterfactual_branches_generated(self, goal_collapse, config):
-        if not config["features"]["use_counterfactual_sim"]:
-            pytest.skip("counterfactual sim disabled")
-
-        goal_collapse.create_goal("cf1", "counterfactual", 0.5)
-        branches = goal_collapse.simulate_counterfactual("cf1", n_branches=5)
-
-        assert len(branches) == 5
-
-    @pytest.mark.slow
-    def test_counterfactual_latency(self, goal_collapse, config):
-        """each branch should complete in <200ms."""
-        if not config["features"]["use_counterfactual_sim"]:
-            pytest.skip("counterfactual sim disabled")
-
-        import time
-        goal_collapse.create_goal("cf2", "latency test", 0.5)
-
-        start = time.time()
-        goal_collapse.simulate_counterfactual("cf2", n_branches=10)
-        elapsed = time.time() - start
-
-        assert elapsed < 2.0, f"10 branches took {elapsed:.2f}s > 2s"
-
-
 @pytest.fixture
 def goal_collapse():
     """fixture providing fresh goal collapse instance."""
     from core.goal_collapse import GoalCollapse
     return GoalCollapse()
-
-
-@pytest.fixture
-def config():
-    """fixture providing loaded config."""
-    from utils.helpers import load_system_config
-    return load_system_config()

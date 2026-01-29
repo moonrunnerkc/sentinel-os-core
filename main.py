@@ -7,8 +7,8 @@ from pathlib import Path
 from utils.helpers import load_system_config, load_security_rules, get_logger
 from core import BeliefEcology, ContradictionTracer, GoalCollapse, MetaCognition
 from memory import PersistentMemory, EpisodicReplay
-from security import Sandbox, AuditLogger
-from interfaces import LocalLLM, InputLayer, OutputLayer, FederatedSync
+from security import SoftIsolation, AuditLogger
+from interfaces import LocalLLM, InputLayer, OutputLayer, AuthenticatedSync
 from graphs import IntrospectionGraph
 
 
@@ -32,18 +32,15 @@ class SentinelOS:
         self._meta = MetaCognition(seed=self._config["llm"]["seed"])
 
         # memory
-        self._memory = PersistentMemory(
-            enable_he=self._security.get("use_homomorphic_enc", False)
-        )
+        self._memory = PersistentMemory()
         self._episodes = EpisodicReplay(
             max_episodes=self._config["performance"]["max_episodes"]
         )
 
         # security
-        self._sandbox = Sandbox(config=self._security)
+        self._sandbox = SoftIsolation()
         self._audit = AuditLogger(
-            master_seed=self._security["hmac_key_seed"],
-            pq_crypto=self._security.get("pq_crypto", False)
+            master_seed=self._security["hmac_key_seed"]
         )
 
         # interfaces
@@ -54,9 +51,6 @@ class SentinelOS:
         )
         self._input = InputLayer()
         self._output = OutputLayer()
-        self._sync = FederatedSync(
-            enabled=self._security.get("enable_federated_sync", False)
-        )
 
         # visualization
         self._graph = IntrospectionGraph(

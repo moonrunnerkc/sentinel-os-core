@@ -3,22 +3,8 @@
   "allowed_paths": ["data/"],
   "hmac_key_seed": 42,
   "seccomp_profile": "execve,ptrace",
-  "pq_crypto": false,
-  "use_homomorphic_enc": false,
-  "enable_federated_sync": false,
-  "isolation_level": "python",
-  "trust_boundaries": {
-    "untrusted_to_semi": ["input_validation", "sanitization"],
-    "semi_to_trusted": ["signature_verification", "invariant_check"]
-  },
-  "zk_proofs": {
-    "enabled": false,
-    "prove_state_transitions": false,
-    "verify_on_load": false
-  },
   "audit": {
     "sign_logs": true,
-    "use_merkle_chain": true,
-    "log_boundary_crossings": true
+    "use_merkle_chain": true
   }
 }

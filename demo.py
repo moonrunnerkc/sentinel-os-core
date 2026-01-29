@@ -38,20 +38,20 @@ def main():
     print(f"      Noisy value: {noisy_value:.4f} (original: 0.5)")
     print()
 
-    # 3. zk proofs
-    print("[3/5] ZK Proofs...")
-    from crypto.zk_proofs import ZKProver, ZKVerifier
+    # 3. state commitments
+    print("[3/5] State Commitments...")
+    from crypto.commitments import TransitionCommitmentScheme, CommitmentVerifier
 
-    prover = ZKProver(seed=42)
-    verifier = ZKVerifier()
-    proof = prover.prove_state_transition(
+    scheme = TransitionCommitmentScheme(seed=42)
+    stc, opening = scheme.commit_transition(
         pre_state={"belief": 0.5},
         post_state={"belief": 0.6},
         input_data={"delta": 0.1},
-        transition_fn_hash="demo_fn",
+        transition_type="demo_update",
     )
-    valid, _ = verifier.verify(proof)
-    print(f"      Proof valid: {valid}")
+    result = scheme.verify_transition(stc, opening)
+    print(f"      Commitment valid: {result.valid}")
+    print(f"      Transition type: {stc.transition_type}")
     print()
 
     # 4. merkle tree
@@ -67,18 +67,19 @@ def main():
 
     # 5. signed log chain
     print("[5/5] Signed Audit Chain...")
-    from crypto.pq_signatures import generate_keypair, PQSigner, PQVerifier, SignedLogChain
+    from crypto.pq_signatures import generate_keypair, Signer, Verifier, SignedLogChain, Algorithm
 
-    keypair = generate_keypair("demo_key")
-    signer = PQSigner(keypair)
+    keypair = generate_keypair(Algorithm.ED25519, key_id="demo_key")
+    signer = Signer(keypair)
     chain = SignedLogChain(signer)
 
     chain.append({"event": "system_start", "timestamp": time.time()})
     chain.append({"event": "belief_insert", "id": "b1"})
     chain.append({"event": "goal_update", "id": "g1"})
 
-    valid, _ = chain.verify_chain(PQVerifier.from_keypair(keypair))
+    valid, _ = chain.verify_chain(Verifier.from_keypair(keypair))
     print(f"      Chain valid: {valid}")
+    print(f"      Algorithm: {keypair.algorithm.value}")
     print(f"      Entries: {len(chain.get_chain())}")
     print()
 

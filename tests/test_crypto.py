@@ -4,17 +4,22 @@
 import pytest
 import time
 
-from crypto.zk_proofs import (
-    ZKProof,
-    ZKProver,
-    ZKVerifier,
-    StateTransitionProof,
+from crypto.commitments import (
+    Commitment,
+    CommitmentOpening,
+    CommitmentScheme,
+    CommitmentVerifier,
+    StateTransitionCommitment,
+    TransitionCommitmentScheme,
+    BatchCommitmentScheme,
+    VerificationResult,
 )
 from crypto.pq_signatures import (
     generate_keypair,
-    PQSigner,
-    PQVerifier,
+    Signer,
+    Verifier,
     SignedLogChain,
+    Algorithm,
 )
 from crypto.merkle import (
     MerkleTree,
@@ -23,82 +28,104 @@ from crypto.merkle import (
 )
 
 
-class TestZKProofs:
-    """tests for zero-knowledge proofs."""
+class TestCommitments:
+    """tests for commitment scheme (replaces ZK proofs)."""
 
-    def test_prove_state_transition(self):
-        prover = ZKProver(seed=42)
+    def test_commit_and_open(self):
+        scheme = CommitmentScheme(seed=42)
 
-        pre_state = {"beliefs": {"b1": 0.5}}
-        post_state = {"beliefs": {"b1": 0.6}}
-        input_data = {"delta": 0.1}
+        data = {"beliefs": {"b1": 0.5}}
+        commitment, opening = scheme.commit(data)
 
-        proof = prover.prove_state_transition(
-            pre_state, post_state, input_data, "test_fn_hash"
-        )
+        assert commitment.commitment_id.startswith("cmt_")
+        assert len(commitment.digest) == 64  # SHA-256 hex
 
-        assert proof.pre_state_digest != proof.post_state_digest
-        assert proof.proof.proof_type == "state_transition"
+    def test_verify_valid_opening(self):
+        scheme = CommitmentScheme(seed=42)
+        verifier = CommitmentVerifier()
 
-    def test_verify_valid_proof(self):
-        prover = ZKProver(seed=42)
-        verifier = ZKVerifier()
+        data = {"a": 1, "b": 2}
+        commitment, opening = scheme.commit(data)
 
-        proof = prover.prove_state_transition(
-            {"a": 1}, {"a": 2}, {"delta": 1}, "fn_hash"
-        )
-
-        valid, msg = verifier.verify(proof)
-        assert valid, msg
+        result = verifier.verify(commitment, opening)
+        assert result.valid, result.reason
 
     def test_verify_detects_tampering(self):
-        prover = ZKProver(seed=42)
-        verifier = ZKVerifier()
+        scheme = CommitmentScheme(seed=42)
+        verifier = CommitmentVerifier()
 
-        proof = prover.prove_state_transition(
-            {"a": 1}, {"a": 2}, {"delta": 1}, "fn_hash"
+        data = {"a": 1}
+        commitment, opening = scheme.commit(data)
+
+        # tamper with opening data
+        tampered_opening = CommitmentOpening(
+            commitment_id=opening.commitment_id,
+            data={"a": 2},  # changed
+            salt=opening.salt,
         )
 
-        # tamper with pre_state_digest
-        tampered = StateTransitionProof(
-            pre_state_digest="tampered_hash",
-            post_state_digest=proof.post_state_digest,
-            input_digest=proof.input_digest,
-            proof=proof.proof,
+        result = verifier.verify(commitment, tampered_opening)
+        assert not result.valid
+        assert "mismatch" in result.reason
+
+    def test_determinism_under_seed(self):
+        scheme1 = CommitmentScheme(seed=42)
+        scheme2 = CommitmentScheme(seed=42)
+
+        data = {"x": 100}
+        c1, _ = scheme1.commit(data)
+        c2, _ = scheme2.commit(data)
+
+        assert c1.digest == c2.digest
+        assert c1.salt == c2.salt
+
+    def test_transition_commitment(self):
+        scheme = TransitionCommitmentScheme(seed=42)
+
+        pre_state = {"value": 1}
+        post_state = {"value": 2}
+        input_data = {"delta": 1}
+
+        stc, opening = scheme.commit_transition(
+            pre_state, post_state, input_data, "update"
         )
 
-        valid, msg = verifier.verify(tampered)
-        assert not valid
+        assert stc.pre_state_digest != stc.post_state_digest
+        assert stc.transition_type == "update"
 
-    def test_verify_trace(self):
-        prover = ZKProver(seed=42)
-        verifier = ZKVerifier()
+        result = scheme.verify_transition(stc, opening)
+        assert result.valid
 
-        trace = [
-            {"pre_state_digest": "a", "post_state_digest": "b", "input_digest": "i1"},
-            {"pre_state_digest": "b", "post_state_digest": "c", "input_digest": "i2"},
-        ]
+    def test_batch_commitment(self):
+        scheme = BatchCommitmentScheme(seed=42)
 
-        proofs = prover.prove_trace(trace, "fn_hash")
+        items = [{"i": 1}, {"i": 2}, {"i": 3}]
+        commitments, openings, root = scheme.commit_batch(items)
 
-        valid, msg = verifier.verify_trace(proofs)
-        assert valid, msg
+        assert len(commitments) == 3
+        assert len(openings) == 3
+        assert len(root) == 64  # merkle root is SHA-256
 
 
-class TestPQSignatures:
-    """tests for post-quantum signatures."""
+class TestSignatures:
+    """tests for signature engine."""
 
-    def test_generate_keypair(self):
-        keypair = generate_keypair("test_key")
+    def test_generate_keypair_ed25519(self):
+        keypair = generate_keypair(Algorithm.ED25519, key_id="test_key")
 
         assert keypair.key_id == "test_key"
+        assert keypair.algorithm == Algorithm.ED25519
         assert len(keypair.public_key) > 0
         assert len(keypair.private_key) > 0
 
-    def test_sign_and_verify(self):
+    def test_generate_keypair_default_algorithm(self):
         keypair = generate_keypair()
-        signer = PQSigner(keypair)
-        verifier = PQVerifier.from_keypair(keypair)
+        assert keypair.algorithm == Algorithm.ED25519
+
+    def test_sign_and_verify(self):
+        keypair = generate_keypair(Algorithm.ED25519)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
 
         message = b"test message"
         signature = signer.sign(message)
@@ -106,9 +133,9 @@ class TestPQSignatures:
         assert verifier.verify(message, signature)
 
     def test_verify_fails_on_tampered_message(self):
-        keypair = generate_keypair()
-        signer = PQSigner(keypair)
-        verifier = PQVerifier.from_keypair(keypair)
+        keypair = generate_keypair(Algorithm.ED25519)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
 
         message = b"test message"
         signature = signer.sign(message)
@@ -117,9 +144,9 @@ class TestPQSignatures:
         assert not verifier.verify(tampered, signature)
 
     def test_sign_json(self):
-        keypair = generate_keypair()
-        signer = PQSigner(keypair)
-        verifier = PQVerifier.from_keypair(keypair)
+        keypair = generate_keypair(Algorithm.ED25519)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
 
         data = {"key": "value", "number": 42}
         signed = signer.sign_json(data)
@@ -128,9 +155,9 @@ class TestPQSignatures:
         assert valid, msg
 
     def test_signed_log_chain(self):
-        keypair = generate_keypair()
-        signer = PQSigner(keypair)
-        verifier = PQVerifier.from_keypair(keypair)
+        keypair = generate_keypair(Algorithm.ED25519)
+        signer = Signer(keypair)
+        verifier = Verifier.from_keypair(keypair)
 
         chain = SignedLogChain(signer)
 
@@ -142,11 +169,20 @@ class TestPQSignatures:
         assert valid, msg
         assert len(chain.get_chain()) == 3
 
+    def test_algorithm_mismatch_detected(self):
+        keypair = generate_keypair(Algorithm.ED25519)
+        signer = Signer(keypair)
 
-class TestMerkleTree:
-    """tests for merkle tree."""
+        # sign something
+        signed = signer.sign_json({"test": 1})
 
-    def test_build_tree(self):
+        # modify the algorithm claim
+        signed["algorithm"] = "dilithium3"
+
+        verifier = Verifier.from_keypair(keypair)
+        valid, msg = verifier.verify_json(signed)
+        assert not valid
+        assert "algorithm mismatch" in msg
         tree = MerkleTree()
         tree.add_leaves(["a", "b", "c", "d"])
         root = tree.build()

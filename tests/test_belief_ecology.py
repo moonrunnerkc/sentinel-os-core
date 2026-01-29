@@ -128,42 +128,6 @@ class TestContradictionDetection:
         assert ("y2", "y1") not in contradictions
 
 
-class TestCausalSimulation:
-    """test causal simulation for belief updates."""
-
-    def test_causal_sim_produces_deterministic_output(self, belief_ecology, config):
-        if not config["features"]["use_world_models"]:
-            pytest.skip("world models disabled in config")
-
-        belief = belief_ecology.create_belief("cs1", "test causal", 0.7, "test")
-        result1 = belief_ecology.simulate_causal_update("cs1", seed=42)
-        result2 = belief_ecology.simulate_causal_update("cs1", seed=42)
-
-        assert result1 == result2
-
-    @pytest.mark.slow
-    def test_causal_sim_accuracy_ground_truth(self, belief_ecology, config):
-        """validate >95% accuracy against ground truth mocks."""
-        if not config["features"]["use_world_models"]:
-            pytest.skip("world models disabled in config")
-
-        # run 100 counterfactual scenarios
-        correct = 0
-        for i in range(100):
-            belief = belief_ecology.create_belief(
-                f"cs_{i}", f"test belief {i}", 0.5, "test"
-            )
-            result = belief_ecology.simulate_causal_update(f"cs_{i}", seed=i)
-            # mock ground truth: even seeds should increase confidence
-            expected_direction = "increase" if i % 2 == 0 else "decrease"
-            actual_direction = "increase" if result["delta"] > 0 else "decrease"
-            if expected_direction == actual_direction:
-                correct += 1
-
-        accuracy = correct / 100
-        assert accuracy >= 0.95, f"causal accuracy {accuracy:.2%} < 95%"
-
-
 class TestScalability:
     """test belief ecology at scale."""
 
@@ -189,10 +153,3 @@ def belief_ecology():
     """fixture providing a fresh belief ecology instance."""
     from core.belief_ecology import BeliefEcology
     return BeliefEcology()
-
-
-@pytest.fixture
-def config():
-    """fixture providing loaded config."""
-    from utils.helpers import load_system_config
-    return load_system_config()

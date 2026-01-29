@@ -335,21 +335,21 @@ class SentinelBenchmarkSuite:
         return self._runner.run("hmac_sign", sign_message)
 
     def _bench_zk_proof(self) -> BenchmarkResult:
-        """benchmark ZK proof generation."""
-        from crypto.zk_proofs import ZKProver
+        """benchmark commitment generation (replaces ZK proof benchmark)."""
+        from crypto.commitments import TransitionCommitmentScheme
 
-        prover = ZKProver(seed=self._seed)
+        scheme = TransitionCommitmentScheme(seed=self._seed)
 
         pre_state = {"beliefs": {"b1": 0.5}}
         post_state = {"beliefs": {"b1": 0.6}}
         input_data = {"delta": 0.1}
 
-        def generate_proof():
-            prover.prove_state_transition(
-                pre_state, post_state, input_data, "test_fn_hash"
+        def generate_commitment():
+            scheme.commit_transition(
+                pre_state, post_state, input_data, "test_transition"
             )
 
-        return self._runner.run("zk_proof_gen", generate_proof)
+        return self._runner.run("commitment_gen", generate_commitment)
 
     def _bench_dp_noise(self) -> BenchmarkResult:
         """benchmark differential privacy noise addition."""

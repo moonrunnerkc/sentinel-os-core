@@ -1,13 +1,13 @@
 # Author: Bradley R. Kinnard
-# post-quantum signatures using Dilithium (via cryptography library fallback)
+# signature engine - explicit algorithm selection, no silent fallbacks
 
 import hashlib
 import json
 import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
@@ -16,22 +16,31 @@ from utils.helpers import get_logger
 logger = get_logger(__name__)
 
 
-# note: true Dilithium requires additional libraries (liboqs, pqcrypto)
-# this implementation uses Ed25519 as fallback with Dilithium interface
-# when liboqs-python becomes available, swap the backend
+class Algorithm(Enum):
+    """supported signature algorithms."""
+    ED25519 = "ed25519"
+    DILITHIUM3 = "dilithium3"
+
+
+def _liboqs_available() -> bool:
+    """check if liboqs is installed for post-quantum crypto."""
+    try:
+        import oqs  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 
 @dataclass
-class PQKeyPair:
+class KeyPair:
     """
-    post-quantum key pair container.
+    signature key pair.
 
-    when liboqs is available: uses Dilithium3
-    fallback: uses Ed25519 (not PQ-secure, but same interface)
+    algorithm is explicit - no silent fallback between algorithms.
     """
     public_key: bytes
     private_key: bytes
-    algorithm: str
+    algorithm: Algorithm
     created_at: float
     key_id: str
 
@@ -41,32 +50,31 @@ class PQKeyPair:
     def to_dict(self) -> dict[str, Any]:
         return {
             "public_key": self.public_key_hex(),
-            "algorithm": self.algorithm,
+            "algorithm": self.algorithm.value,
             "created_at": self.created_at,
             "key_id": self.key_id,
         }
 
 
-def _try_dilithium() -> bool:
-    """check if liboqs is available for true PQ crypto."""
-    try:
-        import oqs  # noqa: F401
-        return True
-    except ImportError:
-        return False
-
-
-def generate_keypair(key_id: str | None = None) -> PQKeyPair:
+def generate_keypair(
+    algorithm: Algorithm = Algorithm.ED25519,
+    key_id: str | None = None,
+) -> KeyPair:
     """
-    generate a post-quantum keypair.
+    generate a key pair with explicit algorithm selection.
 
-    tries Dilithium3 via liboqs, falls back to Ed25519.
+    raises ImportError if requested algorithm requires unavailable library.
     """
     timestamp = time.time()
-    kid = key_id or f"pq_{int(timestamp * 1000)}"
+    kid = key_id or f"key_{int(timestamp * 1000)}"
 
-    if _try_dilithium():
-        # use actual Dilithium
+    if algorithm == Algorithm.DILITHIUM3:
+        if not _liboqs_available():
+            raise ImportError(
+                "Dilithium3 requires liboqs-python. "
+                "Install with: pip install liboqs-python"
+            )
+
         import oqs
         signer = oqs.Signature("Dilithium3")
         public_key = signer.generate_keypair()
@@ -74,66 +82,75 @@ def generate_keypair(key_id: str | None = None) -> PQKeyPair:
 
         logger.info(f"generated Dilithium3 keypair: {kid}")
 
-        return PQKeyPair(
+        return KeyPair(
             public_key=public_key,
             private_key=private_key,
-            algorithm="Dilithium3",
+            algorithm=Algorithm.DILITHIUM3,
             created_at=timestamp,
             key_id=kid,
         )
-    else:
-        # fallback to Ed25519
-        private_key = ed25519.Ed25519PrivateKey.generate()
-        public_key = private_key.public_key()
 
-        priv_bytes = private_key.private_bytes(
+    elif algorithm == Algorithm.ED25519:
+        private_key_obj = ed25519.Ed25519PrivateKey.generate()
+        public_key_obj = private_key_obj.public_key()
+
+        priv_bytes = private_key_obj.private_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PrivateFormat.Raw,
             encryption_algorithm=serialization.NoEncryption(),
         )
-        pub_bytes = public_key.public_bytes(
+        pub_bytes = public_key_obj.public_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw,
         )
 
-        logger.warning(f"generated Ed25519 keypair (PQ fallback): {kid}")
+        logger.info(f"generated Ed25519 keypair: {kid}")
 
-        return PQKeyPair(
+        return KeyPair(
             public_key=pub_bytes,
             private_key=priv_bytes,
-            algorithm="Ed25519-PQ-Fallback",
+            algorithm=Algorithm.ED25519,
             created_at=timestamp,
             key_id=kid,
         )
 
+    else:
+        raise ValueError(f"unsupported algorithm: {algorithm}")
 
-class PQSigner:
+
+class Signer:
     """
-    post-quantum message signer.
-
-    signs messages with Dilithium or Ed25519 fallback.
+    message signer with explicit algorithm.
     """
 
-    def __init__(self, keypair: PQKeyPair):
+    def __init__(self, keypair: KeyPair):
         self._keypair = keypair
-        self._use_dilithium = keypair.algorithm == "Dilithium3"
+        self._algorithm = keypair.algorithm
 
-        if self._use_dilithium:
+        if self._algorithm == Algorithm.DILITHIUM3:
             import oqs
             self._signer = oqs.Signature("Dilithium3", keypair.private_key)
-        else:
+        elif self._algorithm == Algorithm.ED25519:
             self._private_key = ed25519.Ed25519PrivateKey.from_private_bytes(
                 keypair.private_key
             )
+        else:
+            raise ValueError(f"unsupported algorithm: {self._algorithm}")
+
+    @property
+    def algorithm(self) -> Algorithm:
+        return self._algorithm
+
+    @property
+    def key_id(self) -> str:
+        return self._keypair.key_id
 
     def sign(self, message: bytes) -> bytes:
         """sign a message."""
-        if self._use_dilithium:
-            signature = self._signer.sign(message)
+        if self._algorithm == Algorithm.DILITHIUM3:
+            return self._signer.sign(message)
         else:
-            signature = self._private_key.sign(message)
-
-        return signature
+            return self._private_key.sign(message)
 
     def sign_json(self, data: dict[str, Any]) -> dict[str, Any]:
         """sign a JSON-serializable dict and return signed envelope."""
@@ -144,40 +161,45 @@ class PQSigner:
         return {
             "payload": data,
             "signature": signature.hex(),
-            "algorithm": self._keypair.algorithm,
+            "algorithm": self._algorithm.value,
             "key_id": self._keypair.key_id,
             "signed_at": time.time(),
         }
 
 
-class PQVerifier:
+class Verifier:
     """
-    post-quantum signature verifier.
-
-    verifies signatures without needing private key.
+    signature verifier - uses only public key.
     """
 
-    def __init__(self, public_key: bytes, algorithm: str):
+    def __init__(self, public_key: bytes, algorithm: Algorithm):
         self._public_key = public_key
         self._algorithm = algorithm
-        self._use_dilithium = algorithm == "Dilithium3"
 
-        if self._use_dilithium:
+        if algorithm == Algorithm.DILITHIUM3:
+            if not _liboqs_available():
+                raise ImportError("Dilithium3 verification requires liboqs-python")
             import oqs
             self._verifier = oqs.Signature("Dilithium3")
-        else:
+        elif algorithm == Algorithm.ED25519:
             self._ed_public = ed25519.Ed25519PublicKey.from_public_bytes(public_key)
+        else:
+            raise ValueError(f"unsupported algorithm: {algorithm}")
+
+    @property
+    def algorithm(self) -> Algorithm:
+        return self._algorithm
 
     def verify(self, message: bytes, signature: bytes) -> bool:
         """verify a signature."""
         try:
-            if self._use_dilithium:
+            if self._algorithm == Algorithm.DILITHIUM3:
                 return self._verifier.verify(message, signature, self._public_key)
             else:
                 self._ed_public.verify(signature, message)
                 return True
         except Exception as e:
-            logger.warning(f"signature verification failed: {e}")
+            logger.debug(f"signature verification failed: {e}")
             return False
 
     def verify_json(self, signed_envelope: dict[str, Any]) -> tuple[bool, str]:
@@ -185,6 +207,11 @@ class PQVerifier:
         try:
             payload = signed_envelope["payload"]
             signature = bytes.fromhex(signed_envelope["signature"])
+            envelope_algo = signed_envelope.get("algorithm")
+
+            # verify algorithm matches
+            if envelope_algo and envelope_algo != self._algorithm.value:
+                return False, f"algorithm mismatch: expected {self._algorithm.value}, got {envelope_algo}"
 
             canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
             message = canonical.encode()
@@ -200,26 +227,25 @@ class PQVerifier:
             return False, f"verification error: {e}"
 
     @classmethod
-    def from_keypair(cls, keypair: PQKeyPair) -> "PQVerifier":
+    def from_keypair(cls, keypair: KeyPair) -> "Verifier":
         """create verifier from keypair (uses public key only)."""
         return cls(keypair.public_key, keypair.algorithm)
 
 
 class SignedLogChain:
     """
-    chain of signed log entries with PQ signatures.
+    chain of signed log entries.
 
-    each entry is signed and includes hash of previous entry,
-    creating a tamper-evident chain.
+    each entry includes hash of previous entry, creating tamper-evident chain.
     """
 
-    def __init__(self, signer: PQSigner):
+    def __init__(self, signer: Signer):
         self._signer = signer
         self._chain: list[dict[str, Any]] = []
         self._prev_hash: str = "genesis"
 
     def _compute_hash(self, data: dict[str, Any]) -> str:
-        """compute hash of log entry."""
+        """compute hash of entry."""
         canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode()).hexdigest()
 
@@ -242,7 +268,7 @@ class SignedLogChain:
         """return the full chain."""
         return self._chain.copy()
 
-    def verify_chain(self, verifier: PQVerifier) -> tuple[bool, str]:
+    def verify_chain(self, verifier: Verifier) -> tuple[bool, str]:
         """verify the entire chain."""
         if not self._chain:
             return True, "empty chain"
@@ -274,3 +300,26 @@ class SignedLogChain:
         tree.build()
 
         return tree.root
+
+
+def get_recommended_algorithm(pq_required: bool) -> Algorithm:
+    """
+    get recommended algorithm based on requirements.
+
+    if pq_required=True and liboqs missing, raises ImportError.
+    """
+    if pq_required:
+        if not _liboqs_available():
+            raise ImportError(
+                "Post-quantum crypto required but liboqs-python not installed. "
+                "Either install liboqs-python or set pq_crypto=false in config."
+            )
+        return Algorithm.DILITHIUM3
+    else:
+        return Algorithm.ED25519
+
+
+# backwards compatibility aliases (deprecated)
+PQKeyPair = KeyPair
+PQSigner = Signer
+PQVerifier = Verifier

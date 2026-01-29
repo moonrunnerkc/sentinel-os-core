@@ -145,10 +145,10 @@ Performance validated across 100 iterations per operation with statistical rigor
 | **Contradiction Tracing** | Automatic detection and resolution | `core/contradiction_tracer.py` |
 | **Persistent Memory** | Async I/O via aiofiles | `memory/persistent_memory.py` |
 | **Episodic Replay** | LRU-based episode storage | `memory/episodic_replay.py` |
-| **Sandbox Execution** | Restricted builtins, blocked imports | `security/sandbox.py` |
+| **Soft Isolation** | Restricted builtins, blocked imports, explicit threat model | `security/soft_isolation.py` |
 | **HMAC Audit Logs** | Tamper-evident logging | `security/audit_logger.py` |
 
-### Verification (NEW)
+### Verification (Implemented)
 
 | Feature | Description | Location |
 |---------|-------------|----------|
@@ -157,7 +157,7 @@ Performance validated across 100 iterations per operation with statistical rigor
 | **Property Testing** | Randomized property verification | `verification/properties.py` |
 | **Trace Integrity** | Cryptographic chain verification | `verification/state_machine.py` |
 
-### Privacy (NEW)
+### Privacy (Implemented)
 
 | Feature | Description | Location |
 |---------|-------------|----------|
@@ -167,32 +167,23 @@ Performance validated across 100 iterations per operation with statistical rigor
 | **Secure Aggregation** | DP-preserving aggregation | `privacy/mechanisms.py` |
 | **Clipping** | L2 norm bounding for sensitivity | `privacy/mechanisms.py` |
 
-### Cryptography (NEW)
+### Cryptography (Implemented)
 
 | Feature | Description | Location |
 |---------|-------------|----------|
-| **ZK State Proofs** | Prove transitions without revealing state | `crypto/zk_proofs.py` |
-| **PQ Signatures** | Ed25519 with Dilithium fallback | `crypto/pq_signatures.py` |
+| **Commitments** | Hash-based state commitments (NOT zero-knowledge) | `crypto/commitments.py` |
+| **Ed25519 Signatures** | Standard digital signatures | `crypto/pq_signatures.py` |
 | **Signed Log Chains** | Tamper-evident audit chains | `crypto/pq_signatures.py` |
 | **Merkle Trees** | Batch commitment and verification | `crypto/merkle.py` |
-| **Incremental Merkle** | Streaming commitment for logs | `crypto/merkle.py` |
+| **Authenticated Sync** | Signed belief export/import with replay protection | `interfaces/authenticated_sync.py` |
 
-### Isolation (NEW)
+### Optional (Requires Dependencies)
 
-| Feature | Description | Location |
-|---------|-------------|----------|
-| **Multi-Level Isolation** | Python → Firejail → Container → MicroVM | `security/isolation.py` |
-| **Trust Boundaries** | Formal boundary crossing validation | `security/isolation.py` |
-| **Security Audit** | Automated security checks | `security/isolation.py` |
-
-### Experimental (Config-Gated)
-
-| Feature | Config Flag | Status | Location |
-|---------|-------------|--------|----------|
-| **Homomorphic Encryption** | `use_homomorphic_enc` | Working (TenSEAL) | `crypto/homomorphic.py` |
-| **Neuromorphic SNN** | `neuromorphic_mode` | Working (brian2) | `neuromorphic/__init__.py` |
-| **World Model Simulation** | `use_world_models` | Working (MuJoCo/PyBullet/SciPy) | `simulation/__init__.py` |
-| **Firejail Sandbox** | `use_firejail` | Working | `security/isolation.py` |
+| Feature | Dependency | Status | Location |
+|---------|------------|--------|----------|
+| **Homomorphic Encryption** | tenseal | Working | `crypto/homomorphic.py` |
+| **Neuromorphic SNN** | brian2 | Working (no mock mode) | `neuromorphic/__init__.py` |
+| **Firejail Sandbox** | firejail | Working | `security/soft_isolation.py` |
 
 ---
 
@@ -285,13 +276,14 @@ privacy:
   total_delta: 1.0e-5
   composition_mode: basic
 
-simulation:
-  preferred_backend: auto  # auto, scipy, mujoco, pybullet
+features:
+  # requires brian2 - will fail if unavailable
+  neuromorphic_mode: false
 
 isolation:
-  level: python  # none, python, firejail, container, microvm
-  memory_limit_mb: 512
+  level: python
   timeout_seconds: 30
+  use_firejail: false
 ```
 
 ### Security Config
@@ -301,13 +293,9 @@ Edit `config/security_rules.json`:
 ```json
 {
   "use_firejail": false,
-  "pq_crypto": false,
-  "use_homomorphic_enc": false,
-  "isolation_level": "python",
-  "zk_proofs": {
-    "enabled": false,
-    "prove_state_transitions": false
-  },
+  "allowed_paths": ["data/"],
+  "hmac_key_seed": 42,
+  "seccomp_profile": "execve,ptrace",
   "audit": {
     "sign_logs": true,
     "use_merkle_chain": true
@@ -384,41 +372,67 @@ report = accountant.export_audit_report()
 
 ## Cryptographic Primitives
 
-### ZK State Proofs
+### State Commitments
 
 ```python
-from crypto.zk_proofs import ZKProver, ZKVerifier
+from crypto.commitments import StateCommitment
 
-prover = ZKProver(seed=42)
-verifier = ZKVerifier()
+commitment = StateCommitment(seed=42)
 
-# prove state transition
-proof = prover.prove_state_transition(
-    pre_state={"belief": 0.5},
-    post_state={"belief": 0.6},
-    input_data={"delta": 0.1},
-    transition_fn_hash="sha256_of_function"
+# commit to a state (NOT zero-knowledge - just hashing)
+result = commitment.commit_state(
+    state={"belief": 0.5, "goal": "active"},
+    metadata={"step": 1}
 )
+print(result.commitment_hash)
 
-# verify without seeing state
-valid, msg = verifier.verify(proof)
+# verify commitment later
+valid = commitment.verify_commitment(result.commitment_hash, result.state_hash)
 ```
 
 ### Signed Log Chains
 
 ```python
-from crypto.pq_signatures import generate_keypair, PQSigner, SignedLogChain, PQVerifier
+from crypto.pq_signatures import generate_keypair, Signer, Verifier, Algorithm
 import time
 
-keypair = generate_keypair()
-signer = PQSigner(keypair)
-chain = SignedLogChain(signer)
+keypair = generate_keypair(Algorithm.ED25519)
+signer = Signer(keypair)
 
-chain.append({"event": "start", "timestamp": time.time()})
-chain.append({"event": "belief_update", "id": "b1"})
+# sign audit entries
+entry1 = {"event": "start", "timestamp": time.time()}
+sig1 = signer.sign(json.dumps(entry1).encode())
 
-# verify entire chain
-valid, msg = chain.verify_chain(PQVerifier.from_keypair(keypair))
+# verify signature
+verifier = Verifier(keypair.public_key, keypair.algorithm)
+valid = verifier.verify(json.dumps(entry1).encode(), sig1)
+```
+
+### Authenticated Sync
+
+```python
+from crypto.pq_signatures import generate_keypair, Signer, Algorithm
+from interfaces.authenticated_sync import AuthenticatedSync
+
+# create sync instances for two devices
+keypair_a = generate_keypair(Algorithm.ED25519, key_id="device_a")
+signer_a = Signer(keypair_a)
+sync_a = AuthenticatedSync(signer_a, keypair_a)
+
+keypair_b = generate_keypair(Algorithm.ED25519, key_id="device_b")
+signer_b = Signer(keypair_b)
+sync_b = AuthenticatedSync(signer_b, keypair_b)
+
+# register each other's keys
+sync_a.register_peer_key(keypair_b)
+sync_b.register_peer_key(keypair_a)
+
+# export beliefs with signature
+beliefs = [{"id": "b1", "content": "test"}]
+export = sync_a.export_beliefs(beliefs)
+
+# import verifies signature and checks for replay
+result, imported = sync_b.import_beliefs(export)
 ```
 
 ---
@@ -482,27 +496,31 @@ docker run --network none sentinel-os pytest tests/ -v
 2. **SEMI_TRUSTED**: Validated user config, sanitized inputs
 3. **UNTRUSTED**: External inputs, user code, network data
 
-### Isolation Levels
+### Soft Isolation
 
-| Level | Mechanism | Strength |
-|-------|-----------|----------|
-| None | No isolation | Testing only |
-| Python | Restricted builtins | Best-effort |
-| Firejail | seccomp + namespaces | Moderate |
-| Container | Docker/Podman | Good |
-| MicroVM | Firecracker/QEMU | High |
+The sandbox provides **defense-in-depth**, not cryptographic security:
 
-### What Is Proven
+| Defended | Not Defended |
+|----------|--------------|
+| Accidental dangerous ops | Sophisticated attacks |
+| Basic injection patterns | CPython interpreter exploits |
+| Obvious import/exec/eval | Pickle deserialization |
+| Timeout enforcement | Memory corruption |
+
+For hostile code execution, use VMs or hardware isolation.
+
+### What Is Actually Verified
 
 - Invariants are checked on every transition
 - Privacy budget is never exceeded
 - Traces are cryptographically chained
 - Merkle roots are verifiable
+- Signatures use real Ed25519
 
 ### What Is Best-Effort
 
 - Python sandbox (bypassable by determined attacker)
-- Ed25519 fallback (not post-quantum resistant without liboqs)
+- Pattern-based code blocking (not comprehensive)
 
 ---
 
@@ -511,10 +529,26 @@ docker run --network none sentinel-os pytest tests/ -v
 | Limitation | Details |
 |------------|---------|
 | **Sandbox escapes** | Python isolation is not a security boundary |
-| **PQ fallback** | Uses Ed25519 when liboqs unavailable |
+| **No ZK proofs** | Uses hash commitments, not SNARK/STARK |
+| **Ed25519 only** | No post-quantum (Dilithium) without liboqs |
 | **LLM reproducibility** | Varies across hardware |
 | **Scalability** | Tested to 10k beliefs |
-| **ZK proofs** | Demonstrative, not production SNARK/STARK |
+| **Neuromorphic** | Requires brian2, no mock mode |
+
+---
+
+## Removed Features
+
+The following features were removed because they were mock implementations:
+
+| Feature | Why Removed |
+|---------|-------------|
+| **ZK Proofs** | Was hash-based simulation, not actual ZKP |
+| **Causal Simulation** | Was random numbers with seed, not causal inference |
+| **Counterfactual Branching** | Was random perturbation, not real counterfactuals |
+| **World Models** | Removed - no actual physics simulation |
+| **PQ Crypto** | Removed - no liboqs integration existed |
+| **Federated ZKP Sync** | Replaced with signed sync (honest about what it does) |
 
 ---
 

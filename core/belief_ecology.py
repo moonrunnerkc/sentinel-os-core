@@ -1,5 +1,5 @@
 # Author: Bradley R. Kinnard
-# belief ecology - manages belief creation, propagation, decay, and causal simulation
+# belief ecology - manages belief creation, propagation, decay
 
 import time
 from typing import Any
@@ -15,7 +15,6 @@ logger = get_logger(__name__)
 class BeliefEcology:
     """
     manages a network of beliefs with propagation, decay, and contradiction detection.
-    supports optional causal simulation via world models.
     """
 
     def __init__(self):
@@ -110,41 +109,6 @@ class BeliefEcology:
     def find_contradictions(self) -> list[tuple[str, str]]:
         """return all known contradiction pairs."""
         return list(self._contradictions)
-
-    def simulate_causal_update(
-        self,
-        belief_id: str,
-        seed: int = 42
-    ) -> dict[str, Any]:
-        """
-        simulate causal counterfactual update using world model.
-        returns update delta and new confidence.
-        """
-        if belief_id not in self._beliefs:
-            raise KeyError(f"belief not found: {belief_id}")
-
-        np.random.seed(seed)
-        belief = self._beliefs[belief_id]
-
-        # deterministic causal simulation based on seed parity
-        # even seeds increase confidence, odd seeds decrease
-        direction = 1 if seed % 2 == 0 else -1
-        magnitude = np.random.uniform(0.01, 0.1)
-        delta = direction * magnitude
-
-        new_conf = max(0.0, min(1.0, belief["confidence"] + delta))
-        old_conf = belief["confidence"]
-        belief["confidence"] = new_conf
-        belief["updated_at"] = time.time()
-
-        logger.info(f"causal update {belief_id}: {old_conf:.3f} -> {new_conf:.3f}")
-        return {
-            "belief_id": belief_id,
-            "old_confidence": old_conf,
-            "new_confidence": new_conf,
-            "delta": delta,
-            "seed": seed
-        }
 
     def count(self) -> int:
         """return total number of beliefs."""
