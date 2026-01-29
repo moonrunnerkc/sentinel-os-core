@@ -16,10 +16,25 @@ Modular, offline-first cognitive operating system for synthetic intelligence. De
 |------------|--------|----------|-----|
 | [Why This Exists](#why-this-exists) | [Architecture](#architecture) | [Verification Evidence](#verification-evidence) | [Installation](#installation) |
 | [Quick Start](#quick-start) | [Features](#features) | [Formal Verification](#formal-verification) | [Configuration](#configuration) |
-|  |  | [Privacy Guarantees](#privacy-guarantees) | [Testing](#testing) |
-|  |  | [Cryptographic Primitives](#cryptographic-primitives) | [Benchmarks](#benchmarks) |
+| [Changelog](#changelog) | [Roadmap](#roadmap) | [Privacy Guarantees](#privacy-guarantees) | [Testing](#testing) |
+| [Contributing](#contributing) |  | [Cryptographic Primitives](#cryptographic-primitives) | [Benchmarks](#benchmarks) |
 |  |  | [Security Architecture](#security-architecture) | [Docker](#docker) |
 |  |  | [Limitations](#limitations) | [License](#license) |
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
+
+**Current Version: 0.1.0-alpha**
+
+Recent highlights:
+- Extended 1000+ episode benchmarks with raw log export
+- Full belief-update-goal-evolve cycle demo
+- Explicit per-module threat model documentation
+- CONTRIBUTING.md with guidelines
+- CI workflow with coverage and skip warnings
 
 ---
 
@@ -543,15 +558,62 @@ result, imported = sync_b.import_beliefs(export)
 ## Testing
 
 ```bash
-# fast tests
-pytest tests/ -m "not slow and not chaos" -v
+# fast tests (CI default)
+make test
 
-# all tests
-pytest tests/ -v
+# with coverage report
+make test-cov
 
-# with coverage
-pytest tests/ --cov=. --cov-report=html
+# warn on skipped tests
+make test-warn-skips
+
+# property-based tests with Hypothesis
+make property-test
 ```
+
+### Reproducing Tests
+
+For Hypothesis-based tests, reproduce failures with:
+
+```bash
+pytest tests/test_formal_verification.py --hypothesis-seed=12345
+```
+
+Seeds are printed on failure. See [tests/conftest.py](tests/conftest.py) for configuration.
+
+### Coverage
+
+Coverage threshold: 80%. Run `make test-cov` to generate HTML report at `htmlcov/index.html`.
+
+---
+
+## Extended Benchmarks (1000+ Episodes)
+
+Validate long-running stability:
+
+```bash
+# run 1000 episode benchmark
+make bench-extended
+
+# or manually
+python -m benchmarks.extended_benchmark --episodes 1000 --seed 42
+```
+
+**Latest Results (seed=42, 1000 episodes, 10 beliefs/episode):**
+
+| Metric | Value |
+|--------|-------|
+| Total Runtime | 0.57s |
+| Avg Cycle | 0.48ms |
+| P95 Cycle | 0.82ms |
+| P99 Cycle | 1.21ms |
+| Peak Memory | 48.1MB |
+| Beliefs Created | 10,000 |
+| Contradictions Found | 82 |
+| Goal Convergence | 100% |
+| Error Rate | 0.00% |
+
+Raw logs saved to `data/logs/extended_benchmark_*.json`.
 
 ---
 
@@ -592,6 +654,8 @@ docker run --network none sentinel-os pytest tests/ -v
 ---
 
 ## Security Architecture
+
+📖 **See [docs/THREAT_MODELS.md](docs/THREAT_MODELS.md) for comprehensive per-module threat analysis.**
 
 ### Isolation Levels
 
@@ -675,6 +739,48 @@ The ZK proofs are **scoped to discrete-log based protocols**:
 - ✅ State transition invariant proofs
 - ❌ NOT SNARK/STARK (no general computation)
 - ❌ NOT range proofs (requires bulletproofs)
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Quick start for contributors:
+```bash
+git clone https://github.com/moonrunnerkc/sentinel-os-core.git
+cd sentinel-os-core
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+make test
+```
+
+---
+
+## Roadmap
+
+### Current: v0.1.x (Alpha)
+
+- [x] Core belief/goal/contradiction engine
+- [x] Verification layer with invariants
+- [x] Privacy budget tracking
+- [x] ZK proofs (discrete-log scope)
+- [x] Extended benchmarks (1000+ episodes)
+- [x] Threat model documentation
+
+### Next: v0.2.x
+
+- [ ] Local LLM integration (llama.cpp)
+- [ ] Enhanced isolation (seccomp profiles)
+- [ ] Range proofs (Bulletproofs)
+- [ ] Consensus protocol stubs
+
+### Future: v1.0
+
+- [ ] Production hardening
+- [ ] External security audit
+- [ ] Stable API freeze
+- [ ] Community governance
 
 ---
 

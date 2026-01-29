@@ -2,6 +2,25 @@
 # zero-knowledge proofs - Pedersen commitments and Schnorr proofs
 # simplified implementation using modular arithmetic over a safe prime
 
+"""
+ZK Proofs Module - SCOPE LIMITATION
+
+This module provides discrete-log based ZK proofs ONLY:
+
+  ✅ Pedersen commitments (hiding, binding, homomorphic)
+  ✅ Schnorr proofs of knowledge
+  ✅ State transition proofs (belief count deltas)
+
+  ❌ NOT SNARK/STARK (no general computation)
+  ❌ NOT range proofs (requires Bulletproofs)
+  ❌ NOT set membership (requires accumulators)
+
+If you need general-purpose ZK proofs for arbitrary computation,
+integrate a circuit-based system like circom, halo2, or risc0.
+
+See docs/THREAT_MODELS.md for full security analysis.
+"""
+
 import hashlib
 import secrets
 from dataclasses import dataclass
@@ -10,6 +29,13 @@ from typing import Any
 from utils.helpers import get_logger
 
 logger = get_logger(__name__)
+
+
+# scope warning for runtime
+ZK_SCOPE_WARNING = (
+    "ZK proofs are discrete-log based only (Pedersen + Schnorr). "
+    "NOT suitable for general computation proofs. See docs/THREAT_MODELS.md."
+)
 
 
 # Use a safe prime p = 2q + 1 where q is also prime

@@ -228,10 +228,33 @@ class BeliefCoherenceObjective(ObjectiveFunction):
 
 class EfficiencyObjective(ObjectiveFunction):
     """
-    objective measuring system efficiency.
+    objective measuring system efficiency with quantified metrics.
 
-    higher = better (faster operations, lower memory)
+    metrics (all normalized to [0, 1]):
+    - throughput_score: ops/sec relative to target (log scale)
+    - memory_score: inverse of memory usage percentage
+    - latency_score: inverse of p95 latency relative to budget
+    - stability_score: penalty for high learning rates
+
+    formula:
+        efficiency = w1*throughput + w2*memory + w3*latency - stability_penalty
+
+    weights are explicit and documented:
+    - throughput: 0.4 (40% of score)
+    - memory: 0.3 (30% of score)
+    - latency: 0.3 (30% of score)
+    - stability penalty: up to 0.2 for lr > 0.05
     """
+
+    # explicit weights for each metric component
+    WEIGHT_THROUGHPUT = 0.4
+    WEIGHT_MEMORY = 0.3
+    WEIGHT_LATENCY = 0.3
+
+    # target values for normalization
+    TARGET_OPS_PER_SEC = 10000.0  # 10k ops/sec = score 1.0
+    MAX_OPS_PER_SEC = 1000000.0   # 1M ops/sec for log scale ceiling
+    TARGET_LATENCY_MS = 10.0      # 10ms p95 = score 1.0
 
     def __init__(self):
         super().__init__("efficiency")
@@ -243,20 +266,35 @@ class EfficiencyObjective(ObjectiveFunction):
     ) -> float:
         context = context or {}
 
-        # get efficiency metrics from context
+        # extract metrics with defaults
         ops_per_second = context.get("ops_per_second", 1000.0)
         memory_usage_pct = context.get("memory_usage_pct", 50.0)
+        p95_latency_ms = context.get("p95_latency_ms", 20.0)
 
-        # normalize ops/sec (higher is better, log scale)
-        ops_score = np.log10(max(1.0, ops_per_second)) / 6.0  # normalize to ~1 at 1M ops
+        # throughput score: log scale, normalized to [0, 1]
+        # 10k ops/sec = 0.67, 100k = 0.83, 1M = 1.0
+        throughput_score = min(1.0, np.log10(max(1.0, ops_per_second)) / np.log10(self.MAX_OPS_PER_SEC))
 
-        # memory score (lower is better)
-        memory_score = 1.0 - (memory_usage_pct / 100.0)
+        # memory score: linear, lower is better
+        memory_score = max(0.0, 1.0 - (memory_usage_pct / 100.0))
 
-        # penalize high learning rates (cause instability)
-        lr_penalty = max(0, params.learning_rate - 0.05) * 2.0
+        # latency score: inverse, normalized to target
+        # 10ms = 1.0, 20ms = 0.5, 100ms = 0.1
+        latency_score = min(1.0, self.TARGET_LATENCY_MS / max(1.0, p95_latency_ms))
 
-        return (ops_score + memory_score) / 2.0 - lr_penalty
+        # weighted sum
+        weighted_sum = (
+            self.WEIGHT_THROUGHPUT * throughput_score
+            + self.WEIGHT_MEMORY * memory_score
+            + self.WEIGHT_LATENCY * latency_score
+        )
+
+        # stability penalty: high learning rates cause instability
+        # penalty kicks in above 0.05, max penalty 0.2 at lr=0.1
+        stability_penalty = max(0.0, (params.learning_rate - 0.05)) * 4.0
+        stability_penalty = min(0.2, stability_penalty)
+
+        return weighted_sum - stability_penalty
 
 
 class MetaEvolutionEngine:

@@ -49,9 +49,39 @@ property-test:
 	$(PYTEST) tests/test_formal_verification.py::TestPropertyBasedVerification -v \
 		--hypothesis-show-statistics
 
+# run tests with coverage report
+test-cov:
+	$(PYTEST) tests/ -v --tb=short \
+		--cov=. \
+		--cov-report=html \
+		--cov-report=term-missing \
+		--cov-fail-under=80
+	@echo ""
+	@echo "Coverage report: htmlcov/index.html"
+
+# run tests and warn on skips
+test-warn-skips:
+	@echo "Running tests with skip warnings..."
+	$(PYTEST) tests/ -v --tb=short 2>&1 | tee .test-output.txt
+	@echo ""
+	@echo "=============================================="
+	@echo "SKIPPED TEST SUMMARY"
+	@echo "=============================================="
+	@grep -c "SKIPPED" .test-output.txt || echo "0 skipped"
+	@grep "SKIPPED" .test-output.txt || echo "No skipped tests."
+	@rm -f .test-output.txt
+
+# run extended benchmark (1000+ episodes)
+bench-extended:
+	$(PYTHON) -m benchmarks.extended_benchmark --episodes 1000 --seed 42
+
 # run demo
 demo:
 	$(PYTHON) demo.py
+
+# run full cycle demo
+demo-full:
+	$(PYTHON) examples/full_cycle_demo.py
 
 # clean build artifacts
 clean:
@@ -90,18 +120,22 @@ docker-verify:
 help:
 	@echo "Sentinel OS Core - Makefile Targets"
 	@echo ""
-	@echo "  make test        - Run all tests"
-	@echo "  make test-quiet  - Run tests quietly"
-	@echo "  make verify      - Run formal verification suite"
-	@echo "  make bench       - Run benchmarks"
-	@echo "  make bench-crypto - Run crypto benchmarks"
+	@echo "  make test          - Run all tests"
+	@echo "  make test-quiet    - Run tests quietly"
+	@echo "  make test-cov      - Run tests with coverage report"
+	@echo "  make test-warn-skips - Run tests and warn on skips"
+	@echo "  make verify        - Run formal verification suite"
+	@echo "  make bench         - Run benchmarks"
+	@echo "  make bench-crypto  - Run crypto benchmarks"
+	@echo "  make bench-extended - Run 1000+ episode benchmark"
 	@echo "  make property-test - Run property-based tests"
-	@echo "  make demo        - Run demo"
-	@echo "  make clean       - Clean build artifacts"
-	@echo "  make venv        - Create virtual environment"
-	@echo "  make install     - Install dependencies"
-	@echo "  make lint        - Run linting"
-	@echo "  make typecheck   - Run type checking"
-	@echo "  make verify-full - Full verification pipeline"
+	@echo "  make demo          - Run quick demo"
+	@echo "  make demo-full     - Run full cycle demo"
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make venv          - Create virtual environment"
+	@echo "  make install       - Install dependencies"
+	@echo "  make lint          - Run linting"
+	@echo "  make typecheck     - Run type checking"
+	@echo "  make verify-full   - Full verification pipeline"
 	@echo "  make docker-verify - Run verification in Docker"
-	@echo "  make help        - Show this help"
+	@echo "  make help          - Show this help"
