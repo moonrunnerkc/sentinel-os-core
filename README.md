@@ -684,15 +684,6 @@ The ZK proofs are **scoped to discrete-log based protocols**:
 - ❌ NOT SNARK/STARK (no general computation)
 - ❌ NOT range proofs (requires bulletproofs)
 
-### Removed Mock Features
-
-| Feature | Status |
-|---------|--------|
-| **Causal Simulation** | Removed - was random numbers, not causal inference |
-| **Counterfactual Branching** | Removed - was random perturbation |
-| **World Models** | Removed - no actual physics simulation |
-| **Federated ZKP Sync** | Replaced with signed sync (honest about scope) |
-
 ---
 
 ## License
