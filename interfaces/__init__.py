@@ -13,6 +13,10 @@ from interfaces.authenticated_sync import (
     ReplayDetectedError,
     SignatureInvalidError,
 )
+from interfaces.ollama_llm import OllamaLLM, OllamaConfig, GenerationResult
+
+# chatbot imports are done lazily to avoid circular imports
+# use: from interfaces.chatbot import Chatbot, ChatConfig, run_chatbot
 
 __all__ = [
     "LocalLLM",
@@ -25,4 +29,7 @@ __all__ = [
     "SyncError",
     "ReplayDetectedError",
     "SignatureInvalidError",
+    "OllamaLLM",
+    "OllamaConfig",
+    "GenerationResult",
 ]

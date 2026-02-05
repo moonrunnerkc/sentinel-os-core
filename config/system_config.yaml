@@ -6,6 +6,29 @@ llm:
   gpu_layers: 0
   min_vram_gb: 4.0
 
+# ollama settings for chatbot
+ollama:
+  enabled: true
+  base_url: "http://localhost:11434"
+  model: "llama3.2"
+  temperature: 0.0
+  seed: 42
+  max_tokens: 512
+  context_size: 4096
+  timeout: 60
+  num_thread: 4
+
+# chatbot settings
+chatbot:
+  enabled: true
+  auto_save: true
+  save_interval: 5
+  max_history_turns: 10
+  enable_chain_of_thought: true
+  enable_belief_extraction: true
+  enable_contradiction_check: true
+  dp_noise_epsilon: 0.1
+
 performance:
   # null = no limit, integer = soft limit with warning
   max_beliefs: null

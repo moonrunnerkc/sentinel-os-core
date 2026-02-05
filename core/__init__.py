@@ -23,6 +23,9 @@ from core.world_model import (
     create_world_model,
 )
 
+# reasoning agent imports are done lazily to avoid circular imports
+# use: from core.reasoning_agent import ReasoningAgent, AgentConfig, AgentState, ReasoningStep
+
 __all__ = [
     "BeliefEcology",
     "ContradictionTracer",

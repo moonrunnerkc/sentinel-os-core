@@ -7,6 +7,14 @@ All notable changes to Sentinel OS Core. Follows [Keep a Changelog](https://keep
 ## [Unreleased]
 
 ### Added
+- **Chatbot Interface**: Interactive REPL with Ollama LLM integration (`interfaces/chatbot.py`)
+- **Reasoning Agent**: Full cognitive loop with perception, reasoning, action, memory (`core/reasoning_agent.py`)
+- **Ollama LLM Adapter**: Local LLM inference via Ollama API with deterministic seeding (`interfaces/ollama_llm.py`)
+- **Belief Extraction**: LLM-based extraction of beliefs from user input with confidence scoring
+- **Chain-of-Thought**: Intermediate reasoning generation before response
+- **State Persistence**: Save/load agent state including beliefs, goals, episodes
+- **Verification Hooks**: Pre/post invariant checks on cognitive state during LLM interactions
+- 45 new tests for chatbot, reasoning agent, and Ollama adapter
 - Extended 1000+ episode benchmarks with raw log export
 - Full belief-update-goal-evolve cycle demo
 - Explicit per-module threat model documentation
@@ -15,6 +23,7 @@ All notable changes to Sentinel OS Core. Follows [Keep a Changelog](https://keep
 - Coverage report badges
 
 ### Changed
+- Test suite now has 448 tests passing (up from 360)
 - Quantified efficiency metrics in meta-evolution objectives
 - Clearer ZK scope limitations upfront
 

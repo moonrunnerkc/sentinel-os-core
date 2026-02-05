@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-360%20passed-brightgreen.svg)](#verification-evidence)
+[![Tests](https://img.shields.io/badge/tests-448%20passed-brightgreen.svg)](#verification-evidence)
 
 Modular, offline-first cognitive operating system for synthetic intelligence. Designed for autonomous reasoning, persistent memory, and goal evolution in air-gapped or adversarial environments.
 
@@ -30,6 +30,9 @@ See [CHANGELOG.md](CHANGELOG.md) for full version history.
 **Current Version: 0.1.0-alpha**
 
 Recent highlights:
+- **Chatbot interface with Ollama LLM integration** - Interactive REPL with belief extraction, contradiction detection, and goal-directed responses
+- **Reasoning agent** - Full cognitive loop: perception → reasoning → action → memory
+- **Chain-of-thought reasoning** - Intermediate thought generation before response
 - Extended 1000+ episode benchmarks with raw log export
 - Full belief-update-goal-evolve cycle demo
 - Explicit per-module threat model documentation
@@ -54,12 +57,13 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 
 ## Verification Evidence
 
-### Test Suite: 360 Passed, 11 Skipped
+### Test Suite: 448 Passed, 12 Skipped
 
 🧪 **[View Full Test Screenshot](docs/screenshots/test-results.png)**
 
 | Module | Tests | Coverage |
 |--------|-------|----------|
+| `tests/test_chatbot.py` | 45 passed | Ollama adapter, reasoning agent, chatbot REPL, integration |
 | `tests/test_verification.py` | 24 passed | State machine, invariants, property tests, termination |
 | `tests/test_formal_verification.py` | 45 passed | Formal checker, proof log, Hypothesis property tests |
 | `tests/test_privacy.py` | 23 passed | Budget accounting, Laplace/Gaussian mechanisms, clipping |
@@ -70,8 +74,8 @@ This is not a chatbot framework. It is a cognitive substrate for autonomous syst
 | `tests/test_meta_evolution.py` | 30 passed | Evolution engine, objectives, determinism, bounds |
 | `tests/test_world_model.py` | 31 passed | Simulation, counterfactual, hard-fail when disabled |
 | `tests/test_sandbox.py` | 19 passed | Backwards compatibility, pattern blocking |
-| `tests/test_*.py` (other) | 69 passed | Memory, sync, integration, belief ecology, goal collapse |
-| *Skipped* | 11 | Firejail, Docker, liboqs hybrid mode (requires external deps) |
+| `tests/test_*.py` (other) | 112 passed | Memory, sync, integration, belief ecology, goal collapse |
+| *Skipped* | 12 | Firejail, Docker, liboqs hybrid mode (requires external deps) |
 
 *All tests run with `pytest tests/ -v`. Execution time: ~15s.*
 
@@ -219,10 +223,21 @@ This helps validate cross-platform performance and identify hardware-specific bo
 | **Belief Ecology** | Dynamic belief network with propagation and decay | `core/belief_ecology.py` |
 | **Goal Collapse** | RL-based goal evolution with DP noise | `core/goal_collapse.py` |
 | **Contradiction Tracing** | Automatic detection and resolution | `core/contradiction_tracer.py` |
+| **Reasoning Agent** | Full cognitive loop: perception → reasoning → action → memory | `core/reasoning_agent.py` |
 | **Persistent Memory** | Async I/O via aiofiles | `memory/persistent_memory.py` |
 | **Episodic Replay** | LRU-based episode storage | `memory/episodic_replay.py` |
 | **Soft Isolation** | Restricted builtins, blocked imports, explicit threat model | `security/soft_isolation.py` |
 | **HMAC Audit Logs** | Tamper-evident logging | `security/audit_logger.py` |
+
+### Interfaces (Implemented)
+
+| Feature | Description | Location |
+|---------|-------------|----------|
+| **Ollama LLM Adapter** | Local LLM inference via Ollama API with deterministic seeding | `interfaces/ollama_llm.py` |
+| **Chatbot REPL** | Interactive command-line interface with belief/goal inspection | `interfaces/chatbot.py` |
+| **Belief Extraction** | LLM-based extraction of beliefs from user input | `core/reasoning_agent.py` |
+| **Chain-of-Thought** | Intermediate reasoning generation before response | `core/reasoning_agent.py` |
+| **State Persistence** | Save/load agent state including beliefs, goals, episodes | `core/reasoning_agent.py` |
 
 ### Verification (Implemented)
 
@@ -305,12 +320,38 @@ pip install liboqs-python
 
 ## Quick Start
 
+### Run the Demo
+
 ```bash
-# run the demo
 python demo.py
 ```
 
-Output:
+### Run the Chatbot (Requires Ollama)
+
+The chatbot provides an interactive interface with belief extraction, contradiction detection, and goal-directed responses.
+
+**Prerequisites:**
+1. Install and start [Ollama](https://ollama.ai): `ollama serve`
+2. Pull a model: `ollama pull llama3.2`
+
+```bash
+# run the chatbot
+python examples/chatbot_demo.py
+
+# or with options
+python examples/chatbot_demo.py --model llama3.2 --verbose
+```
+
+**Chatbot Commands:**
+- `/help` - Show available commands
+- `/beliefs` - List extracted beliefs
+- `/goals` - Show active goals
+- `/stats` - Display agent statistics
+- `/privacy` - Check privacy budget status
+- `/quit` - Exit
+
+### Demo Output
+
 ```
 ============================================================
 SENTINEL OS CORE - DEMO
@@ -822,11 +863,18 @@ make test
 - [x] Extended benchmarks (1000+ episodes)
 - [x] Threat model documentation
 - [x] Core-only mode integration tests
+- [x] **Chatbot interface with Ollama LLM integration**
+- [x] **Reasoning agent with cognitive loop**
+- [x] **Chain-of-thought reasoning**
+
+### Coming Soon: User-Facing UI
+
+A graphical user interface is in development to make Sentinel OS Core accessible to non-technical users. Stay tuned for updates.
 
 ### Next: v0.2.x
 
+- [ ] **User-facing web UI** for chatbot and system monitoring
 - [ ] **Modular extraction**: Extract `privacy.budget` as standalone `sentinel-privacy` on PyPI
-- [ ] Local LLM integration (llama.cpp)
 - [ ] Enhanced isolation (seccomp profiles)
 - [ ] Range proofs (Bulletproofs)
 - [ ] Consensus protocol stubs

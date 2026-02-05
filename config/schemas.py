@@ -17,6 +17,35 @@ system_config_schema = {
                 "min_vram_gb": {"type": "number", "minimum": 0.0}
             }
         },
+        "ollama": {
+            "type": "object",
+            "description": "Ollama LLM settings for chatbot",
+            "properties": {
+                "enabled": {"type": "boolean", "default": True},
+                "base_url": {"type": "string", "default": "http://localhost:11434"},
+                "model": {"type": "string", "default": "llama3.2"},
+                "temperature": {"type": "number", "minimum": 0.0, "maximum": 2.0, "default": 0.0},
+                "seed": {"type": "integer", "default": 42},
+                "max_tokens": {"type": "integer", "minimum": 1, "maximum": 8192, "default": 512},
+                "context_size": {"type": "integer", "minimum": 512, "maximum": 131072, "default": 4096},
+                "timeout": {"type": "integer", "minimum": 1, "default": 60},
+                "num_thread": {"type": "integer", "minimum": 1, "default": 4}
+            }
+        },
+        "chatbot": {
+            "type": "object",
+            "description": "Chatbot reasoning agent settings",
+            "properties": {
+                "enabled": {"type": "boolean", "default": True},
+                "auto_save": {"type": "boolean", "default": True},
+                "save_interval": {"type": "integer", "minimum": 1, "default": 5},
+                "max_history_turns": {"type": "integer", "minimum": 1, "default": 10},
+                "enable_chain_of_thought": {"type": "boolean", "default": True},
+                "enable_belief_extraction": {"type": "boolean", "default": True},
+                "enable_contradiction_check": {"type": "boolean", "default": True},
+                "dp_noise_epsilon": {"type": "number", "minimum": 0.01, "maximum": 1.0, "default": 0.1}
+            }
+        },
         "performance": {
             "type": "object",
             "properties": {
